@@ -1,0 +1,1 @@
+from nailclipper.nailclipper import ThumbnailManager, Size, RefreshPolicy, CacheDir, CustomSizePolicy
