@@ -26,9 +26,11 @@ Nailclipper is very easy to use. Simply create a thumbnail manager, with options
 The ThumbnailManager has a lot of different options for configuration:
 
 `appname`: The name of your application. Used with `cache_dir=CacheDir.AUTO`.
+
 `appauthor`: The author of your application. Used with `cache_dir=CacheDir.AUTO`.
 
 `mask`: The path to a mask image to apply to the thumbnails. The mask will be scaled to the requested thumbnail sizes, so it is suggested to supply the mask as a 1024x1024 (XXLARGE) size. You probably want to use `resize_style=ResizeStyle.FILL` if you are using a mask.
+
 `upscale`: If `true` images are upscaled if the requested thumbnai size is actually larger than the source image.
 
 
