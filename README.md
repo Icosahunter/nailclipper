@@ -33,7 +33,6 @@ The ThumbnailManager has a lot of different options for configuration:
 
 `upscale`: If `true` images are upscaled if the requested thumbnai size is actually larger than the source image.
 
-
 `cache_dir`: Can be one of the special CacheDir options or a string or pathlike object. This is the directory where thumbnails will be stored.
 - `CacheDir.FREEDESKTOP`: The thumbnail directory as specified by the Freedesktop Thumbnail Specification.
 - `CacheDir.NAILCLIPPER`: Uses a directory for a 'nailclipper' app in the default application cache directory.

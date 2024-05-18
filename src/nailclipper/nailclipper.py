@@ -1,7 +1,7 @@
-from urllib.parse import urlparse
+from urllib.parse import urlparse, unquote
 from pathlib import Path
 from platformdirs import user_cache_dir
-from nailclipper.renderers.pillow import PillowRenderer
+from nailclipper.renderers import PillowRenderer, Html2ImageRenderer, Pdf2ImageRenderer
 from PIL import Image
 from PIL.PngImagePlugin import PngInfo
 
@@ -31,6 +31,7 @@ class RefreshPolicy:
         if urlparse(file_uri).scheme != 'file':
             return False
         image = Image.open(thumbnail_path)
+        file_path = unquote(urlparse(file_uri).path)
         file_mtime = os.stat(file_path).st_mtime
         file_size = os.path.getsize(file_path)
         return ((not self.options['is_shared'] and not 'Thumb::MTime' in image.text) 
@@ -96,7 +97,7 @@ class ThumbnailManager:
                     None: 'custom'
                 })
         
-        self.renderers = options.get('renderers', [PillowRenderer])
+        self.renderers = options.get('renderers', [PillowRenderer(), Pdf2ImageRenderer(), Html2ImageRenderer()])
         #self.is_shared = options.get('is_shared', False) #TODO: implement this part of the Freedesktop spec
 
         self.resize_style = options.get('resize_style', ResizeStyle.FIT)
@@ -105,7 +106,7 @@ class ThumbnailManager:
         self.cache_dir = options.get('cache_dir', CacheDir.AUTO)
         self.appname = options.get('appname', None)
         self.appauthor = options.get('appauthor', None)
-        self.upscale = True
+        self.upscale = options.get('upscale', True)
 
         if type(self.cache_dir) == str:
             self.cache_dir = Path(self.cache_dir)
@@ -145,18 +146,19 @@ class ThumbnailManager:
     def _create_thumbnail(self, uri, size, save_path):
         
         parsed = urlparse(uri)
-        temppath = Path(self._tempdir.name) / '~image'
+        temppath = Path(self._tempdir.name) / '~image.png'
         success = False
 
         save_path.parent.mkdir(parents=True)
 
         for renderer in self.renderers:
-            if parsed.scheme == 'file' and hasattr(renderer, 'from_file') and renderer.from_file(Path(parsed.path), size, temppath):
-                success = True
-                break
-            elif hasattr(renderer, 'from_url') and renderer.from_url(uri, size, temppath):
-                success = True
-                break
+            if renderer.is_supported(uri):
+                if parsed.scheme == 'file' and hasattr(renderer, 'from_file') and renderer.from_file(Path(parsed.path), size, temppath):
+                    success = True
+                    break
+                elif hasattr(renderer, 'from_url') and renderer.from_url(uri, size, temppath):
+                    success = True
+                    break
 
         if not success:
             return None
@@ -210,7 +212,7 @@ class ThumbnailManager:
         metadata = PngInfo()
         parsed = urlparse(uri)
         if parsed.scheme == 'file':
-            path = Path(parsed.path)
+            path = Path(unquote(parsed.path))
             metadata.add_text('Thumb::MTime', str(os.stat(path).st_mtime))
             metadata.add_text('Thumb::MSize', str(os.path.getsize(path)))
         metadata.add_text('Thumb::URI', uri)
@@ -225,7 +227,7 @@ class ThumbnailManager:
             h = (desize[0]/size[0])*size[1]
         else:
             h = desize[1]
-            w = (desize[1]/size[1])*desize[0]
+            w = (desize[1]/size[1])*size[0]
         return (int(w), int(h))
     
     def _image_fill_size(self, size, desize):
@@ -236,7 +238,7 @@ class ThumbnailManager:
             h = (desize[0]/size[0])*size[1]
         else:
             h = desize[1]
-            w = (desize[1]/size[1])*desize[0]
+            w = (desize[1]/size[1])*size[0]
         return (int(w), int(h))
     
     def _thumbnail_path(self, uri, size):

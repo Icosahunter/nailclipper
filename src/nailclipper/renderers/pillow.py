@@ -1,14 +1,16 @@
+from pathlib import Path
+
 class PillowRenderer:
 
-    @staticmethod
-    def supported():
-        from PIL import Image
-        return [x for x, y in Image.registered_extensions().items() if y in Image.OPEN]
+    def __init__(self):
+        import PIL
+        self.pil = PIL
 
-    @staticmethod
-    def from_file(file, size, save_path):
-        from PIL import Image
-        image = Image.open(file)
+    def is_supported(self, uri):
+        return Path(uri).suffix in [x for x, y in self.pil.Image.registered_extensions().items() if y in self.pil.Image.OPEN]
+
+    def from_file(self, file, size, save_path):
+        image = self.pil.Image.open(file)
         image.thumbnail(size)
-        image.save(save_path, 'png')
+        image.save(save_path)
         return True
