@@ -3,7 +3,9 @@ import os
 import platform
 
 tm = ThumbnailManager(
-    cache_dir = CacheDir.TEMP
+    cache_dir = CacheDir.TEMP,
+    resize_style = ResizeStyle.FILL,
+    mask = '../mask.png'
 )
 
 path = tm.get_thumbnail('../apples.jpg')

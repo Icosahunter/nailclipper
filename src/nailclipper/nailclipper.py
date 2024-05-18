@@ -1,14 +1,16 @@
-import enum
 from urllib.parse import urlparse
 from pathlib import Path
 from platformdirs import user_cache_dir
-from nailclipper.thumbnail_providers.pillow import PillowThumbnailProvider
+from nailclipper.renderers.pillow import PillowRenderer
 from PIL import Image
+from PIL.PngImagePlugin import PngInfo
+
 import os
 import time
 import platform
 import hashlib
 import tempfile
+import mimetypes
 
 class Size:
     NORMAL  = (128 , 128 )
@@ -63,13 +65,24 @@ def _get_xdg_home():
 
 class CacheDir:
     FREEDESKTOP = _get_xdg_home()
-    NAILCLIPPER = Path(user_cache_dir('nailclipper', 'Nathaniel Markham')) / 'thumbnails'
+    NAILCLIPPER = Path(user_cache_dir('nailclipper', 'Icosahunter')) / 'thumbnails'
     TEMP        = object()
     AUTO        = object()
 
 class CustomSizePolicy:
     RESIZE = object()
-    CACHE = object()
+    CACHE  = object()
+
+class ResizeStyle:
+    FIT     = object()
+    FILL    = object()
+    PADDING = object()
+    STRETCH = object()
+
+class Resample:
+    NEAREST  = Image.Resampling.NEAREST
+    BILINEAR = Image.Resampling.BILINEAR
+    AUTO     = object()
 
 class ThumbnailManager:
 
@@ -83,10 +96,17 @@ class ThumbnailManager:
                     None: 'custom'
                 })
         
-        self.providers = options.get('providers', [PillowThumbnailProvider])
+        self.renderers = options.get('renderers', [PillowRenderer])
         #self.is_shared = options.get('is_shared', False) #TODO: implement this part of the Freedesktop spec
 
-        self.cache_dir = options.get('cache_dir', CacheDir.NAILCLIPPER)
+        self.resize_style = options.get('resize_style', ResizeStyle.FIT)
+        self.mask = options.get('mask', None)
+        self.resample = options.get('resample', Resample.AUTO)
+        self.cache_dir = options.get('cache_dir', CacheDir.AUTO)
+        self.appname = options.get('appname', None)
+        self.appauthor = options.get('appauthor', None)
+        self.upscale = True
+
         if type(self.cache_dir) == str:
             self.cache_dir = Path(self.cache_dir)
 
@@ -125,36 +145,126 @@ class ThumbnailManager:
     def _create_thumbnail(self, uri, size, save_path):
         
         parsed = urlparse(uri)
+        temppath = Path(self._tempdir.name) / '~image'
+        success = False
 
         save_path.parent.mkdir(parents=True)
 
-        for provider in self.providers:
-            if parsed.scheme == 'file' and hasattr(provider, 'from_file') and provider.from_file(Path(parsed.path), size, save_path):
-                return save_path
-            elif hasattr(provider, 'from_url') and provider.from_url(uri, size, save_path):
-                return save_path
+        for renderer in self.renderers:
+            if parsed.scheme == 'file' and hasattr(renderer, 'from_file') and renderer.from_file(Path(parsed.path), size, temppath):
+                success = True
+                break
+            elif hasattr(renderer, 'from_url') and renderer.from_url(uri, size, temppath):
+                success = True
+                break
+
+        if not success:
+            return None
+        
+        image = Image.open(temppath)
+
+        image = image.convert('RGBA')
+
+        resample = self.resample
+
+        if resample == Resample.AUTO:
+            if max(image.size) < 128 and self.upscale:
+                resample = Resample.NEAREST
+            else:
+                resample = Resample.BILINEAR
+
+        if self.resize_style == ResizeStyle.STRETCH:
+            image = image.resize(size, resample=resample)
+        elif self.resize_style == ResizeStyle.FILL:
+            image = image.resize(self._image_fill_size(image.size, size), resample=resample)
+            image = image.crop((0, 0, *size))
+        else:
+            if self.upscale:
+                image = image.resize(self._image_fit_size(image.size, size), resample=resample)
+            else:
+                image.thumbnail(size, resample=resample)
+        
+        if self.resize_style == ResizeStyle.PADDING:
+            pos = (
+                int((size[0] - image.size[0]) / 2),
+                int((size[1] - image.size[1]) / 2)
+            )
+            padded = Image.new(image.mode, size, (0, 0, 0, 0))
+            padded.paste(image, pos)
+            image = padded
+
+        if self.mask is not None:
+            masked = Image.new(image.mode, image.size, (0, 0, 0, 0))
+            mask = Image.open(self.mask)
+            mask = mask.resize(image.size)
+            masked.paste(image, (0, 0), mask=mask)
+            image = masked
+        
+        metadata = self._thumbnail_metadata(uri)
+
+        image.save(save_path, 'png', pnginfo=metadata)
+        
+        return save_path
+    
+    def _thumbnail_metadata(self, uri):
+        metadata = PngInfo()
+        parsed = urlparse(uri)
+        if parsed.scheme == 'file':
+            path = Path(parsed.path)
+            metadata.add_text('Thumb::MTime', str(os.stat(path).st_mtime))
+            metadata.add_text('Thumb::MSize', str(os.path.getsize(path)))
+        metadata.add_text('Thumb::URI', uri)
+        metadata.add_text('Thumb::Mimetype', mimetypes.guess_type(uri)[0])
+        return metadata
+            
+    def _image_fit_size(self, size, desize):
+        r1 = size[0] / size[1]
+        r2 = desize[0] / desize[1]
+        if r1 > r2:
+            w = desize[0]
+            h = (desize[0]/size[0])*size[1]
+        else:
+            h = desize[1]
+            w = (desize[1]/size[1])*desize[0]
+        return (int(w), int(h))
+    
+    def _image_fill_size(self, size, desize):
+        r1 = size[0] / size[1]
+        r2 = desize[0] / desize[1]
+        if r1 < r2:
+            w = desize[0]
+            h = (desize[0]/size[0])*size[1]
+        else:
+            h = desize[1]
+            w = (desize[1]/size[1])*desize[0]
+        return (int(w), int(h))
     
     def _thumbnail_path(self, uri, size):
         md5 = hashlib.md5()
         md5.update(uri.encode('ascii'))
-        thumbdir = self._thumbnail_cache_dir(size)
+        thumbdir = self._thumbnail_cache_dir(uri, size)
 
         if size in standard_sizes:
             return thumbdir / self.size_folders[size] / f'{md5.hexdigest()}.png'
         else:
             return thumbdir / self.size_folders[None] / f'({size[0]}x{size[1]}){md5.hexdigest()}.png'
-
     
-    def _thumbnail_cache_dir(self, size):
+    def _thumbnail_cache_dir(self, uri, size):
 
-        if size not in standard_sizes:
+        non_standard = size not in standard_sizes or urlparse(uri).scheme != 'file'
+
+        if non_standard:
             if self.non_standard_cache_dir == CacheDir.AUTO:
                 if self.cache_dir == CacheDir.FREEDESKTOP:
-                    return CachDir.NAILCLIPPER
+                    if self.appname and self.appauthor:
+                        return user_cache_dir(appname, appauthor)
+                    return CacheDir.NAILCLIPPER
             elif self.non_standard_cache_dir == CacheDir.TEMP:
                 return Path(self._tempdir.name)
         
         if self.cache_dir == CacheDir.AUTO:
+            if self.appname and self.appauthor:
+                return user_cache_dir(appname, appauthor)
             return CacheDir.NAILCLIPPER
         elif self.cache_dir == CacheDir.TEMP:
             return Path(self._tempdir.name)
