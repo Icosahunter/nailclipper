@@ -216,7 +216,9 @@ class ThumbnailManager:
             metadata.add_text('Thumb::MTime', str(os.stat(path).st_mtime))
             metadata.add_text('Thumb::MSize', str(os.path.getsize(path)))
         metadata.add_text('Thumb::URI', uri)
-        metadata.add_text('Thumb::Mimetype', mimetypes.guess_type(uri)[0])
+        mimetype = mimetypes.guess_type(uri, strict=False)[0]
+        if mimetype is not None:
+            metadata.add_text('Thumb::Mimetype', mimetype)
         return metadata
             
     def _image_fit_size(self, size, desize):
