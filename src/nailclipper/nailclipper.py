@@ -1,18 +1,20 @@
-from urllib.parse import urlparse, unquote
-from pathlib import Path
-from platformdirs import user_cache_dir
-from nailclipper.renderers import PillowRenderer, Html2ImageRenderer, Pdf2ImageRenderer
-from PIL import Image
-from PIL.PngImagePlugin import PngInfo
-
 import os
 import time
 import platform
 import hashlib
 import tempfile
 import mimetypes
+from pathlib import Path
+from urllib.parse import urlparse, unquote
+
+from platformdirs import user_cache_dir
+from PIL import Image
+from PIL.PngImagePlugin import PngInfo
+
+from nailclipper.renderers import PillowRenderer, Html2ImageRenderer, Pdf2ImageRenderer
 
 class Size:
+    """ Thumnail size constants from the Freedesktop thumbnail spec """
     NORMAL  = (128 , 128 )
     LARGE   = (256 , 256 )
     XLARGE  = (512 , 512 )
@@ -20,7 +22,9 @@ class Size:
 
 standard_sizes = [Size.NORMAL, Size.LARGE, Size.XLARGE, Size.XXLARGE]
 
+# 
 class RefreshPolicy:
+    """ Methods for determining if a thumbnail needs to be updated """
 
     @classmethod
     def _takes_args(self, val):
@@ -28,6 +32,7 @@ class RefreshPolicy:
 
     @staticmethod
     def FREEDESKTOP(thumbnail_path, file_uri):
+        """ Thumbnail update algorithm from the Freedesktop thumbnail spec """
         if urlparse(file_uri).scheme != 'file':
             return False
         image = Image.open(thumbnail_path)
@@ -40,6 +45,8 @@ class RefreshPolicy:
     
     @staticmethod
     def INTERVAL(days=10):
+        """ Update algorithm based on how old a thumbnail is in days """
+        # This method returns a method, so you can specify the update interval
         def interval_check(thumbnail_path, file_uri):
             thumb_mtime = os.stat(thumbnail_path).st_mtime
             return (time.time() - thumb_mtime) >= (days*24*60*60)
@@ -47,6 +54,7 @@ class RefreshPolicy:
     
     @staticmethod
     def AUTO(thumbnail_path, file_uri):
+        """ This is the same as RefreshPolicy.FREEDESKTOP for local files, but uses RefreshPolicy.INTERVAL(30) for all other content."""
         if urlparse(file_uri).scheme == 'file':
             return RefreshPolicy.FREEDESKTOP(thumbnail_path, file_uri)
         else:
@@ -54,9 +62,11 @@ class RefreshPolicy:
 
     @staticmethod
     def NEVER(thumbnail_path, file_uri):
+        """ Never update the thumbnail once created. """
         return False
 
 def _get_xdg_home():
+    """ Gets the XDG cache thumbnail directory. For windows this returns the same thumbnail cache location that the Windows version of KDE Dolphin uses. """
     if platform.system() == 'Windows':
         return Path(os.path.expandvars('%LOCALAPPDATA%')) / 'cache/thumbnails'
     elif os.environ.get('XDG_CACHE_HOME', None):
@@ -65,22 +75,26 @@ def _get_xdg_home():
         return Path.home() / '.cache/thumbnails'
 
 class CacheDir:
+    """ Default cache directory options. """
     FREEDESKTOP = _get_xdg_home()
     NAILCLIPPER = Path(user_cache_dir('nailclipper', 'Icosahunter')) / 'thumbnails'
     TEMP        = object()
     AUTO        = object()
 
 class CustomSizePolicy:
+    # TODO: Implement this
     RESIZE = object()
     CACHE  = object()
 
 class ResizeStyle:
+    """ Options for how to resize rendered images. """
     FIT     = object()
     FILL    = object()
     PADDING = object()
     STRETCH = object()
 
 class Resample:
+    """ Options for how to resample resized rendered images. """
     NEAREST  = Image.Resampling.NEAREST
     BILINEAR = Image.Resampling.BILINEAR
     AUTO     = object()
@@ -107,6 +121,8 @@ class ThumbnailManager:
         self.appname = options.get('appname', None)
         self.appauthor = options.get('appauthor', None)
         self.upscale = options.get('upscale', True)
+        self.background = options.get('background', (0, 0, 0, 0))
+        self.foreground = options.get('foreground', None)
 
         if type(self.cache_dir) == str:
             self.cache_dir = Path(self.cache_dir)
@@ -164,8 +180,54 @@ class ThumbnailManager:
             return None
         
         image = Image.open(temppath)
-
         image = image.convert('RGBA')
+        image = self._resize_image(image, size, self.resize_style)
+
+        background = self._create_ground(self.background, image.size, size)
+        image = self._apply_layer(background, image)
+
+        if self.foreground:
+            foreground = self._create_ground(self.foreground, image.size, size)
+            image = self._apply_layer(image, foreground)
+
+        if self.mask:
+            image = self._apply_mask(image, Image.open(self.mask))
+
+        metadata = self._thumbnail_metadata(uri)
+
+        image.save(save_path, 'png', pnginfo=metadata)
+        
+        return save_path
+    
+    def _apply_layer(self, image1, image2):
+        pos = (
+            int((image1.size[0] - image2.size[0]) / 2),
+            int((image1.size[1] - image2.size[1]) / 2)
+        )
+        image1.alpha_composite(image2, pos)
+        return image1
+    
+    def _create_ground(self, ground, image_size, desired_size):
+        if self.resize_style == ResizeStyle.FIT:
+            bg_size = image.size
+        else:
+            bg_size = desired_size
+        
+        if type(ground) is str:
+            ground = Image.open(ground)
+            ground = self._resize_image(ground, bg_size, ResizeStyle.FILL)
+        else:
+            ground = Image.new('RGBA', bg_size, ground)
+        
+        return ground
+    
+    def _apply_mask(self, image, mask):
+        masked = Image.new(image.mode, image.size, (0, 0, 0, 0))
+        mask = mask.resize(image.size)
+        masked.paste(image, (0, 0), mask=mask)
+        return masked
+    
+    def _resize_image(self, image, size, resize_style):
 
         resample = self.resample
 
@@ -175,38 +237,45 @@ class ThumbnailManager:
             else:
                 resample = Resample.BILINEAR
 
-        if self.resize_style == ResizeStyle.STRETCH:
+        if not self.upscale and (image_size[0] > desired_size[0] or image_size[1] > desired_size[1]):
+            size = self._fit_size(desired_size, image_size)
+
+        if resize_style == ResizeStyle.FILL:
+            x, y, w, h = self._fill_size(image.size, size)
+            image = image.resize((w, h), resample=resample)
+            image = image.crop((x, y, x+size[0], y+size[1]))
+        elif resize_style == ResizeStyle.STRETCH:
             image = image.resize(size, resample=resample)
-        elif self.resize_style == ResizeStyle.FILL:
-            image = image.resize(self._image_fill_size(image.size, size), resample=resample)
-            image = image.crop((0, 0, *size))
         else:
-            if self.upscale:
-                image = image.resize(self._image_fit_size(image.size, size), resample=resample)
-            else:
-                image.thumbnail(size, resample=resample)
+            image = image.resize(self._fit_size(image.size, size), resample=resample)
         
-        if self.resize_style == ResizeStyle.PADDING:
-            pos = (
-                int((size[0] - image.size[0]) / 2),
-                int((size[1] - image.size[1]) / 2)
-            )
-            padded = Image.new(image.mode, size, (0, 0, 0, 0))
-            padded.paste(image, pos)
-            image = padded
+        return image
+    
+    def _fit_size(self, image_size, desired_size):
+        r1 = image_size[0] / image_size[1]
+        r2 = desired_size[0] / desired_size[1]
+        if r1 > r2:
+            w = desired_size[0]
+            h = (desired_size[0]/image_size[0])*image_size[1]
+        else:
+            h = desired_size[1]
+            w = (desired_size[1]/image_size[1])*image_size[0]
+        return (int(w), int(h))
 
-        if self.mask is not None:
-            masked = Image.new(image.mode, image.size, (0, 0, 0, 0))
-            mask = Image.open(self.mask)
-            mask = mask.resize(image.size)
-            masked.paste(image, (0, 0), mask=mask)
-            image = masked
-        
-        metadata = self._thumbnail_metadata(uri)
-
-        image.save(save_path, 'png', pnginfo=metadata)
-        
-        return save_path
+    def _fill_size(self, image_size, desired_size):
+        r1 = image_size[0] / image_size[1]
+        r2 = desired_size[0] / desired_size[1]
+        if r1 < r2:
+            w = desired_size[0]
+            h = (desired_size[0]/image_size[0])*image_size[1]
+            x = 0
+            y = (h - desired_size[1]) / 2
+        else:
+            h = desired_size[1]
+            w = (desired_size[1]/image_size[1])*image_size[0]
+            x = (w - desired_size[0]) / 2
+            y = 0
+        return (int(x), int(y), int(w), int(h))
     
     def _thumbnail_metadata(self, uri):
         metadata = PngInfo()
@@ -220,28 +289,6 @@ class ThumbnailManager:
         if mimetype is not None:
             metadata.add_text('Thumb::Mimetype', mimetype)
         return metadata
-            
-    def _image_fit_size(self, size, desize):
-        r1 = size[0] / size[1]
-        r2 = desize[0] / desize[1]
-        if r1 > r2:
-            w = desize[0]
-            h = (desize[0]/size[0])*size[1]
-        else:
-            h = desize[1]
-            w = (desize[1]/size[1])*size[0]
-        return (int(w), int(h))
-    
-    def _image_fill_size(self, size, desize):
-        r1 = size[0] / size[1]
-        r2 = desize[0] / desize[1]
-        if r1 < r2:
-            w = desize[0]
-            h = (desize[0]/size[0])*size[1]
-        else:
-            h = desize[1]
-            w = (desize[1]/size[1])*size[0]
-        return (int(w), int(h))
     
     def _thumbnail_path(self, uri, size):
         md5 = hashlib.md5()
