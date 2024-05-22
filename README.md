@@ -25,6 +25,9 @@ Nailclipper is very easy to use. Simply create a thumbnail manager, with options
 
 The ThumbnailManager has a lot of different options for configuration:
 
+`preset`: Presets are some curated configurations you can choose from. The options are set according to the preset and then updated with whatever other options you specify.
+- `Preset.DEFAULT`
+
 `appname`: The name of your application. Used with `cache_dir=CacheDir.AUTO`.
 
 `appauthor`: The author of your application. Used with `cache_dir=CacheDir.AUTO`.
