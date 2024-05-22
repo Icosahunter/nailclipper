@@ -29,19 +29,21 @@ The ThumbnailManager has a lot of different options for configuration:
 
 `appauthor`: The author of your application. Used with `cache_dir=CacheDir.AUTO`.
 
-`mask`: The path to a mask image to apply to the thumbnails. The mask will be scaled to the requested thumbnail sizes, so it is suggested to supply the mask as a 1024x1024 (XXLARGE) size. You probably want to use `resize_style=ResizeStyle.FILL` if you are using a mask.
+`background`: The background for the thumbnail. This can be a color tuple `(R, G, B, A)` or a path to an image. If an image it will be resized with ResizeStyle.FILL to the final size of the thumbnail. Even if you use ResizeStyle.FIT this can still have use as it will show through for images with transparent parts.
+
+`foreground`: An overlay to put on top of the thumbnail. This can be `None` (doesn't apply a foreground), or a color tuple `(R, G, B, A)` or a path to an image. If an image it will be resized with ResizeStyle.FILL to the final size of the thumbnail.
+
+`mask`: The path to a mask image to apply to the thumbnails. The mask will be scaled with ResizeStyle.STRETCH to the thumbnail size, so it is suggested to supply the mask as a 1024x1024 (XXLARGE) size. You probably want to use `resize_style=ResizeStyle.FILL` if you are using a mask.
 
 `upscale`: If `true` images are upscaled if the requested thumbnai size is actually larger than the source image.
 
 `cache_dir`: Can be one of the special CacheDir options or a string or pathlike object. This is the directory where thumbnails will be stored.
 - `CacheDir.FREEDESKTOP`: The thumbnail directory as specified by the Freedesktop Thumbnail Specification.
-- `CacheDir.NAILCLIPPER`: Uses a directory for a 'nailclipper' app in the default application cache directory.
 - `CacheDir.TEMP`: Uses a temporary directory that is deleted when the thumbnail manager is deleted.
-- `CacheDir.AUTO`: If the appname and appauthor options are set, this puts the thumbnails is the correct cache directory for your application. Otherwise this is the same as CacheDir.NAILCLIPPER.
+- `CacheDir.AUTO`: If the appname and appauthor options are set, this puts the thumbnails is the correct cache directory for your application. Otherwise this is the same as CacheDir.TEMP.
 
 `non_standard_cache_dir`: In case you want to use non-freedesktop-compliant features, but only sometimes, this puts the non-compliant thumbnails in a different directory.
 - `CacheDir.FREEDESKTOP`: While you could use this value for this option... you really shouldn't.
-- `CacheDir.NAILCLIPPER`: Uses a directory for a 'nailclipper' app in the default application cache directory.
 - `CacheDir.TEMP`: Uses a temporary directory that is deleted when the thumbnail manager is deleted.
 - `CacheDir.AUTO`: If cache_dir is FREEDESKTOP, will act the same as CacheDir.AUTO for cache_dir, otherwise it will simply be the same as cache_dir.
 
@@ -61,3 +63,8 @@ The ThumbnailManager has a lot of different options for configuration:
 - `Resample.NEAREST`: Nearest neighbor resampling, this has no antialiazing.
 - `Resample.BILINEAR`: A antialiased resampling.
 - `Resample.AUTO`: Uses `Resample.NEAREST` when upscaling very small images and `Resample.BILINEAR` the rest of the time.
+
+`compliance`: Performs a check to see if the options comply with a certain specification:
+- `Compliance.FREEDESKTOP`: The Freedesktop Thumbnail Specification
+- `Compliance.FREEDESKTOP_STRICT`: Like FREEDESKTOP but slightly more opinionated and requiring certain option suggestions from the specification.
+- `Compliance.NONE`: Do not perform a check
