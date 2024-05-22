@@ -360,7 +360,7 @@ class ThumbnailManager:
             if self._options['non_standard_cache_dir'] == CacheDir.AUTO:
                 if self._options['cache_dir'] == CacheDir.FREEDESKTOP:
                     if self._options['appname'] and self._options['appauthor']:
-                        return user_cache_dir(appname, appauthor)
+                        return user_cache_dir(appname, appauthor) / 'thumbnails'
                     else:
                         warnings.warn('appname and appauthor not set, using temporary directory for non_standard_cache_dir.')
                         return Path(self._tempdir.name)
@@ -371,7 +371,7 @@ class ThumbnailManager:
         
         if self._options['cache_dir'] == CacheDir.AUTO:
             if self._options['appname'] and self._options['appauthor']:
-                return user_cache_dir(appname, appauthor)
+                return user_cache_dir(appname, appauthor) / 'thumbnails'
             else:
                 warnings.warn('appname and appauthor not set, using temporary directory for cache_dir.')
                 return Path(self._tempdir.name)
