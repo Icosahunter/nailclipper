@@ -4,11 +4,11 @@ import platform
 
 tm = ThumbnailManager(
     resize_style = ResizeStyle.FILL,
-    mask = '../mask.png',
+    mask = './resources/mask.png',
     background = (255, 255, 255, 255)
 )
 
-path = tm.get_thumbnail('../apples.jpg')
+path = tm.get_thumbnail('./resources/apples.jpg')
 print(f'Test thumbnail created at: "{path}"')
 if path and os.path.exists(path):
     if platform.system() == 'Windows':
