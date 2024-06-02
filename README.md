@@ -12,7 +12,7 @@ There are a two main parts to Nailclipper, the ThumbnailGenerator (which contain
 
 The ThumbnailManager can create different styles of thumbnails (by using different ThumbnailGenerators) and store them in different folders (relative to the cache_dir). You give a name for each of these styles and then use that name when calling the get_thumbnail method. The default name when getting a thumbnail is a `None` value, so you can use this if you don't need different types of thumbnails. Here is an example to clarify:
 
-```
+```python
     from nailclipper import ThumbnailGenerator, ThumbnailManager, ResizeStyle
 
     small_tg = ThumbnailGenerator(size = (64, 64), resize_style = ResizeStyle.FILL, mask='rounded_square.png')
