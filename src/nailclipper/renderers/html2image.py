@@ -1,33 +1,44 @@
 from pathlib import Path
+from warnings import warn
 
 class Html2ImageRenderer:
 
-    def __init__(self):
-        from html2image import Html2Image
-        from PIL import Image
-        self.h2i = None
-        self.image = Image
+    h2i = None
+    pil = None
+
+    @staticmethod
+    def init():
         try:
-            self.h2i = Html2Image(size=(2048, 2048))
-        except:
+            from html2image import Html2Image
+            import PIL
+
+            Html2ImageRenderer.pil = PIL
             try:
-                self.h2i = Html2Image(size=(2048, 2048), browser_executable="google-chrome-stable")
+                Html2ImageRenderer.h2i = Html2Image(size=(2048, 2048))
             except:
-                pass
+                Html2ImageRenderer.h2i = Html2Image(size=(2048, 2048), browser_executable="google-chrome-stable")
+        except Exception as e:
+            warn(f'Could not load Html2ImageRenderer: {e}')
 
-    def is_supported(self, uri):
+    @staticmethod
+    def is_supported(uri):
         return True
 
-    def from_url(self, url, size, save_path):
-        save_folder = str(Path(save_path).parent)
-        save_file = str(Path(save_path).name)
-        self.h2i.output_path = save_folder
-        self.h2i.screenshot(url=url, save_as=save_file)
-        image = self.image.open(save_path)
-        image = image.crop(image.getbbox())
-        image.save(save_path)
-        return True
+    @staticmethod
+    def from_url(url, size, save_path):
+        try:
+            save_folder = str(Path(save_path).parent)
+            save_file = str(Path(save_path).name)
+            Html2ImageRenderer.h2i.output_path = save_folder
+            Html2ImageRenderer.h2i.screenshot(url=url, save_as=save_file)
+            image = Html2ImageRenderer.image.open(save_path)
+            image = image.crop(image.getbbox())
+            image.save(save_path)
+            return True
+        except Exception as e:
+            warn(f'Could not generate thumbnail for {Html2ImageRenderer.url} using Html2ImageRenderer: {e}')
+            return False
     
-    def from_path(self, file, size, save_path):
-        self.from_url(Path(file).as_uri, size, save_path)
-        return True
+    @staticmethod
+    def from_path(file, size, save_path):
+        return Html2ImageRenderer.from_url(Path(file).as_uri, size, save_path)

@@ -1,16 +1,32 @@
 from pathlib import Path
+from warnings import warn
 
 class PillowRenderer:
 
-    def __init__(self):
-        import PIL
-        self.pil = PIL
+    pil = None
 
-    def is_supported(self, uri):
-        return Path(uri).suffix in [x for x, y in self.pil.Image.registered_extensions().items() if y in self.pil.Image.OPEN]
+    @staticmethod
+    def init():
+        try:
+            import PIL
+            PillowRenderer.pil = PIL
+        except Exception as e:
+            warn(f'Could not load PillowRenderer: {e}')
 
-    def from_file(self, file, size, save_path):
-        image = self.pil.Image.open(file)
-        image.thumbnail(size)
-        image.save(save_path)
-        return True
+    @staticmethod
+    def is_supported(uri):
+        if PillowRenderer.pil:
+            return Path(uri).suffix in [x for x, y in PillowRenderer.pil.Image.registered_extensions().items() if y in PillowRenderer.pil.Image.OPEN]
+        else:
+            return False
+
+    @staticmethod
+    def from_file(file, size, save_path):
+        try:
+            image = PillowRenderer.pil.Image.open(file)
+            image.thumbnail(size)
+            image.save(save_path)
+            return True
+        except Exception as e:
+            warn(f'Could not generate thumbnail for {file} using PillowRenderer: {e}')
+            return False

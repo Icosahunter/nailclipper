@@ -3,9 +3,11 @@ import os
 import platform
 
 tm = ThumbnailManager(
-    resize_style = ResizeStyle.FILL,
-    mask = './resources/mask.png',
-    background = (255, 255, 255, 255)
+    thumbnail_generators = {None: ThumbnailGenerator(
+        mask = './resources/mask.png',
+        resize_style = ResizeStyle.FILL,
+        
+    )}
 )
 
 path = tm.get_thumbnail('./resources/apples.jpg')
