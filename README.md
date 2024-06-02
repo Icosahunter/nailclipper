@@ -1,5 +1,9 @@
 # Nailclipper
 
+<p align="center">
+    <img src="src/resources/nailclipper.png" width="150">
+</p>
+
 Nailclipper is a Python module for managing thumbnails (or possibly other image or file caches). Nailclipper includes the capability to be compliant with the [Freedesktop Thumbnail Specification](https://specifications.freedesktop.org/thumbnail-spec/thumbnail-spec-latest.html) if that is what you want, but it is also highly configurable.
 
 # Status
@@ -59,7 +63,6 @@ The ThumbnailManager can create different styles of thumbnails (by using differe
 - `Compliance.FREEDESKTOP`: The Freedesktop Thumbnail Specification
 - `Compliance.FREEDESKTOP_STRICT`: Like FREEDESKTOP but slightly more opinionated and requiring certain option suggestions from the specification.
 - `Compliance.NONE`: Do not perform a check
-
 
 ## ThumbnailGenerator options:
 

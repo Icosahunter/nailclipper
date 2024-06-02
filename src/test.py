@@ -4,13 +4,13 @@ import platform
 
 tm = ThumbnailManager(
     thumbnail_generators = {None: ThumbnailGenerator(
-        mask = './resources/mask.png',
+        mask = './resources/test/mask.png',
         resize_style = ResizeStyle.FILL,
         
     )}
 )
 
-path = tm.get_thumbnail('./resources/apples.jpg')
+path = tm.get_thumbnail('./resources/test/apples.jpg')
 print(f'Test thumbnail created at: "{path}"')
 if path and os.path.exists(path):
     if platform.system() == 'Windows':
