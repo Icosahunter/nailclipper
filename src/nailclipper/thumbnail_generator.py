@@ -35,7 +35,7 @@ class ThumbnailGenerator:
 
         if type(self.renderers[0]) == type:
             self.renderers = [x() for x in self.renderers]
-    
+
     def init(self):
         for renderer in self.renderers:
             renderer.init()
@@ -48,7 +48,7 @@ class ThumbnailGenerator:
 
         if image is None:
             return image
-        
+
         image = image.convert('RGBA')
         image = self._resize_image(image, self.size, self.resize_style)
 
@@ -65,9 +65,9 @@ class ThumbnailGenerator:
         metadata = self._thumbnail_metadata(uri)
 
         image.save(save_path, 'png', pnginfo=metadata)
-        
+
         return save_path
-    
+
     def _render_thumbnail(self, uri, size):
         success = False
         parsed = urlparse(uri)
@@ -84,14 +84,14 @@ class ThumbnailGenerator:
                 elif hasattr(renderer, 'from_url') and renderer.from_url(uri, size, file.name):
                     success = True
                     break
-        
+
         if success:
             image = Image.open(file.name)
-        
+
         del file
-        
+
         return image
-    
+
     def _apply_layer(self, image1, image2):
         pos = (
             int((image1.size[0] - image2.size[0]) / 2),
@@ -99,27 +99,27 @@ class ThumbnailGenerator:
         )
         image1.alpha_composite(image2, pos)
         return image1
-    
+
     def _create_ground(self, ground, image_size, desired_size):
         if self.resize_style == ResizeStyle.FIT:
             bg_size = image_size
         else:
             bg_size = desired_size
-        
+
         if type(ground) is str:
             ground = Image.open(ground)
             ground = self._resize_image(ground, bg_size, ResizeStyle.FILL)
         else:
             ground = Image.new('RGBA', bg_size, ground)
-        
+
         return ground
-    
+
     def _apply_mask(self, image, mask):
         masked = Image.new(image.mode, image.size, (0, 0, 0, 0))
         mask = self._resize_image(mask, image.size, ResizeStyle.STRETCH)
         masked.paste(image, (0, 0), mask=mask)
         return masked
-    
+
     def _resize_image(self, image, size, resize_style):
 
         resample = self.resample
@@ -130,8 +130,8 @@ class ThumbnailGenerator:
             else:
                 resample = Resample.BILINEAR
 
-        if not self.upscale and (image_size[0] > desired_size[0] or image_size[1] > desired_size[1]):
-            size = self._fit_size(desired_size, image_size)
+        if not self.upscale and (image.size[0] > size[0] or image.size[1] > size[1]):
+            size = self._fit_size(image.size, size)
 
         if resize_style == ResizeStyle.FILL:
             x, y, w, h = self._fill_size(image.size, size)
@@ -141,9 +141,9 @@ class ThumbnailGenerator:
             image = image.resize(size, resample=resample)
         else:
             image = image.resize(self._fit_size(image.size, size), resample=resample)
-        
+
         return image
-    
+
     def _fit_size(self, image_size, desired_size):
         r1 = image_size[0] / image_size[1]
         r2 = desired_size[0] / desired_size[1]
@@ -169,7 +169,7 @@ class ThumbnailGenerator:
             x = (w - desired_size[0]) / 2
             y = 0
         return (int(x), int(y), int(w), int(h))
-    
+
     def _thumbnail_metadata(self, uri):
         metadata = PngInfo()
         parsed = urlparse(uri)

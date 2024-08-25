@@ -1,11 +1,11 @@
 from pathlib import Path
 import shutil
 
-class IconSet:
+class ExtensionIconSet:
 
-    def __init__(self, extension_map=None):
+    def __init__(self, extension_map={}):
         self.extension_map = extension_map
-    
+
     def is_supported(self, uri):
         if None in self.extension_map:
             return True

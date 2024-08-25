@@ -22,8 +22,6 @@ class ThumbnailManager:
             cache_folders = { None: '.' },
             thumbnail_generators = { None: ThumbnailGenerator() },
             cache_dir = CacheDir.AUTO,
-            appname = None,
-            appauthor = None,
             compliance = Compliance.NONE,
             refresh_policy = RefreshPolicy.AUTO):
 
@@ -32,8 +30,6 @@ class ThumbnailManager:
         self.cache_folders = cache_folders
         self.thumbnail_generators = thumbnail_generators
         self.cache_dir = cache_dir
-        self.appname = appname
-        self.appauthor = appauthor
         self.compliance = compliance
         self.refresh_policy = refresh_policy
 
@@ -44,10 +40,10 @@ class ThumbnailManager:
 
         if RefreshPolicy._takes_args(self.refresh_policy):
             self.refresh_policy = self.refresh_policy()
-        
+
         #if not self.compliance(self):
         #    raise ComplianceError(f'Options do not meet specified compliance spec "{self.compliance.__name__}"')
-        
+
         for tg in set(thumbnail_generators.values()):
             tg.init()
 
@@ -57,27 +53,22 @@ class ThumbnailManager:
     def get_thumbnail(self, uri, style=None):
         if len(urlparse(uri).scheme) <= 1:
             uri = Path(uri).resolve().as_uri()
-        
+
         save_path = self._thumbnail_path(uri, style)
-        
-        if save_path.exists() and not self.RefreshPolicy(save_path, uri):
+
+        if save_path.exists() and not self.refresh_policy(save_path, uri):
             return save_path
-        
+
         return self.thumbnail_generators[style].create_thumbnail(uri, save_path)
-    
+
     def _thumbnail_path(self, uri, style):
         md5 = hashlib.md5()
         md5.update(uri.encode('ascii'))
         return self._thumbnail_cache_dir(uri) / self.cache_folders[style] / f'{md5.hexdigest()}.png'
 
     def _thumbnail_cache_dir(self, uri):
-        
         if self.cache_dir == CacheDir.AUTO:
-            if self.appname and self.appauthor:
-                return user_cache_dir(appname, appauthor) / 'thumbnails'
-            else:
-                warn('appname and appauthor not set, using temporary directory for cache_dir.')
-                return Path(self._tempdir.name)
+                return Path('./cache/thumbnails/')
         elif self.cache_dir == CacheDir.TEMP:
             return Path(self._tempdir.name)
         else:
@@ -85,3 +76,37 @@ class ThumbnailManager:
 
     def save_fail(self, uri):
         pass
+
+    @staticmethod
+    def simple_thumbnail_manager(
+        cache_dir,
+        size,
+        mask = None,
+        background = (0, 0, 0, 0),
+        foreground = None):
+        return ThumbnailManager(
+            thumbnail_generators = { None: ThumbnailGenerator(size=size, mask=mask, background=background, foreground=foreground) },
+            cache_dir = cache_dir
+        )
+
+    @staticmethod
+    def freedesktop_thumbnail_manager():
+        return ThumbnailManager(
+            cache_folders = {
+                None: 'normal',
+                Size.NORMAL: 'normal',
+                Size.LARGE: 'large',
+                Size.XLARGE: 'x-large',
+                Size.XXLARGE: 'xx-large'
+            },
+            thumbnail_generators = {
+                None: ThumbnailGenerator(),
+                Size.NORMAL: ThumbnailGenerator(),
+                Size.LARGE: ThumbnailGenerator(size=Size.LARGE),
+                Size.XLARGE: ThumbnailGenerator(size=Size.XLARGE),
+                Size.XXLARGE: ThumbnailGenerator(size=Size.XXLARGE)
+            },
+            cache_dir = CacheDir.FREEDESKTOP,
+            compliance = Compliance.FREEDESKTOP,
+            refresh_policy = RefreshPolicy.FREEDESKTOP
+        )

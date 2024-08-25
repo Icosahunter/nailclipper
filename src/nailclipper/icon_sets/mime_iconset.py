@@ -2,11 +2,11 @@ from pathlib import Path
 import mimetypes
 import shutil
 
-class IconSet:
+class MimetypeIconSet:
 
-    def __init__(self, mimetype_map=None):
+    def __init__(self, mimetype_map={}):
         self.mimetype_map = mimetype_map
-    
+
     def is_supported(self, uri):
         if None in self.mimetype_map:
             return True

@@ -61,7 +61,7 @@ The ThumbnailManager can create different styles of thumbnails (by using differe
 
 `compliance`: Performs a check to see if the options comply with a certain specification:
 - `Compliance.FREEDESKTOP`: The Freedesktop Thumbnail Specification
-- `Compliance.FREEDESKTOP_STRICT`: Like FREEDESKTOP but slightly more opinionated and requiring certain option suggestions from the specification.
+- `Compliance.FREEDESKTOP_STRICT`: Like FREEDESKTOP but slightly more opinionated and requiring certain optional suggestions from the specification.
 - `Compliance.NONE`: Do not perform a check
 
 ## ThumbnailGenerator options:

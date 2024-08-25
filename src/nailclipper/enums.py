@@ -32,9 +32,9 @@ class RefreshPolicy:
         file_mtime = os.stat(file_path).st_mtime
         file_size = os.path.getsize(file_path)
         return ((not 'Thumb::MTime' in image.text) # When implementing shared cache, add 'and not thumbnail_manager.is_shared' check somehow
-            or ('Thumb::MTime' in image.text and file_mtime != image.text['Thumb::MTime']) 
+            or ('Thumb::MTime' in image.text and file_mtime != image.text['Thumb::MTime'])
             or ('Thumb::Size' in image.text and file_size != image.text['Thumb::Size']))
-    
+
     @staticmethod
     def INTERVAL(days=10):
         """ Update algorithm based on how old a thumbnail is in days """
@@ -43,7 +43,7 @@ class RefreshPolicy:
             thumb_mtime = os.stat(thumbnail_path).st_mtime
             return (time.time() - thumb_mtime) >= (days*24*60*60)
         return interval_check
-    
+
     @staticmethod
     def AUTO(thumbnail_path, file_uri):
         """ This is the same as RefreshPolicy.FREEDESKTOP for local files, but uses RefreshPolicy.INTERVAL(30) for all other content."""
@@ -71,7 +71,6 @@ class CacheDir:
     FREEDESKTOP = get_xdg_home() / 'thumbnails'
     TEMP        = object()
     AUTO        = object()
-    APPLICATION = object()
 
 class CustomSizePolicy:
     # TODO: Implement this
@@ -93,36 +92,37 @@ class Resample:
 
 class Compliance:
     """ Enforces compliance with a specification by raising an exception if a configuration option doesn't meet the spec. """
+    @staticmethod
     def FREEDESKTOP(tm):
         return (
-            tm.size_folders[Size.NORMAL] == 'normal'
-            and tm.size_folders[Size.LARGE] == 'large'
-            and tm.size_folders[Size.XLARGE] == 'x-large'
-            and tm.size_folders[Size.XXLARGE] == 'xx-large'
+            tm.cache_folders[Size.NORMAL] == 'normal'
+            and tm.cache_folders[Size.LARGE] == 'large'
+            and tm.cache_folders[Size.XLARGE] == 'x-large'
+            and tm.cache_folders[Size.XXLARGE] == 'xx-large'
             and tm.resize_style in [ResizeStyle.FIT, ResizeStyle.PADDING]
             and tm.mask == None
             and tm.foreground == None
             and tm.cache_dir == CacheDir.FREEDESKTOP
-            and tm.none_standard_cache_dir != FREEDESKTOP
             and tm.refresh_policy in [RefreshPolicy.FREEDESKTOP, RefreshPolicy.AUTO]
         )
 
+    @staticmethod
     def FREEDESKTOP_STRICT(tm):
         return (
-            tm.size_folders[Size.NORMAL] == 'normal'
-            and tm.size_folders[Size.LARGE] == 'large'
-            and tm.size_folders[Size.XLARGE] == 'x-large'
-            and tm.size_folders[Size.XXLARGE] == 'xx-large'
+            tm.cache_folders[Size.NORMAL] == 'normal'
+            and tm.cache_folders[Size.LARGE] == 'large'
+            and tm.cache_folders[Size.XLARGE] == 'x-large'
+            and tm.cache_folders[Size.XXLARGE] == 'xx-large'
             and tm.background == (0, 0, 0, 0)
             and tm.resize_style == ResizeStyle.FIT
             and tm.mask == None
             and tm.foreground == None
             and tm.cache_dir == CacheDir.FREEDESKTOP
-            and tm.none_standard_cache_dir == CacheDir.TEMP
             and tm.refresh_policy in [RefreshPolicy.FREEDESKTOP, RefreshPolicy.AUTO]
             and tm.resample == Resample.AUTO
-            and tm.upcale == True
+            and tm.upscale == True
         )
 
+    @staticmethod
     def NONE(options):
         return True
