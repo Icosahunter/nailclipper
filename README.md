@@ -12,6 +12,43 @@ Nailclipper is currently in development and is not ready for use. Once a release
 
 # Use
 
+The easiest way to use Nailclipper is to use one of the presets. Most users will find one of these suites their needs:
+
+```python
+
+    from nailclipper import ThumbnailManager
+
+    # The Freedesktop spec compliant thumbnail manager.
+    freedesktop_tm = ThumbnailManager.freedesktop_thumbnail_manager()
+
+    # The simple thumbnail manager assumes you only need one style of thumbnail and only exposes the typically needed options
+    simple_tm = ThumbnailManager.simple_thumbnail_manager(
+        cache_dir = './cache/thumbnails',
+        size = (256, 256),
+        mask = None,
+        background = (0, 0, 0, 0),
+        foreground = None
+    )
+
+    # The image thumbnail generator is exactly like the simple thumbnail generator, except it can only generator thumbnails for images
+    # This reduces the extra dependencies to just Pillow
+    simple_tm = ThumbnailManager.image_thumbnail_manager(
+        cache_dir = './cache/thumbnails',
+        size = (256, 256)
+    )
+
+    # The icon thumbnail manager is like the simple thumbnail generator, but it will use icons as a backup if a thumbnail can't be generated
+    # This preset is especially helpful for file browser type use cases
+    icon_tm = ThumbnailManager.icon_thumbnail_manager(
+        cache_dir = './cache/thumbnails',
+        size = (256, 256),
+        iconset = IconSet() # The icon set can be customized
+    )
+
+```
+
+If further customization is needed, it's *slightly* more complicated.
+
 There are a two main parts to Nailclipper, the ThumbnailGenerator (which contains configuration for how to render/resize/etc the thumbnails) and the ThumbnailManager (which contains configuration for how to store and retrieve cached thumbnails).
 
 The ThumbnailManager can create different styles of thumbnails (by using different ThumbnailGenerators) and store them in different folders (relative to the cache_dir). You give a name for each of these styles and then use that name when calling the get_thumbnail method. The default name when getting a thumbnail is a `None` value, so you can use this if you don't need different types of thumbnails. Here is an example to clarify:
@@ -44,14 +81,10 @@ The ThumbnailManager can create different styles of thumbnails (by using differe
 
 ## ThumbnailManager options:
 
-`appname`: The name of your application. Used with `cache_dir=CacheDir.AUTO`.
-
-`appauthor`: The author of your application. Used with `cache_dir=CacheDir.AUTO`.
-
 `cache_dir`: Can be one of the special CacheDir options or a string or pathlike object. This is the directory where thumbnails will be stored.
 - `CacheDir.FREEDESKTOP`: The thumbnail directory as specified by the Freedesktop Thumbnail Specification.
 - `CacheDir.TEMP`: Uses a temporary directory that is deleted when the thumbnail manager is deleted.
-- `CacheDir.AUTO`: If the appname and appauthor options are set, this puts the thumbnails is the correct cache directory for your application. Otherwise this is the same as CacheDir.TEMP.
+- `CacheDir.AUTO`: This is the default. Currently this is just './cache/thumbnails', in the future it may do something smarter.
 
 `refresh_policy`: Specifies when thumbnails should be updated.
 - `RefreshPolicy.FREEDESKTOP`: The Freedesktop Thumbnail Specification thumbnail update algorithm. This uses the file size and last modified time of the file to determine when it needs to be updated.

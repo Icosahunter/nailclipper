@@ -10,6 +10,10 @@ from platformdirs import user_cache_dir
 from PIL import Image
 from PIL.PngImagePlugin import PngInfo
 
+from nailclipper.iconset import IconSet
+from nailclipper.renderers.html2image import Html2ImageRenderer
+from nailclipper.renderers.pdf2image import Pdf2ImageRenderer
+from nailclipper.renderers.pillow import PillowRenderer
 from nailclipper.thumbnail_generator import ThumbnailGenerator
 from nailclipper.enums import *
 
@@ -78,14 +82,48 @@ class ThumbnailManager:
         pass
 
     @staticmethod
+    def image_thumbnail_manager(
+        cache_dir,
+        size,
+        mask = None,
+        background = (0, 0, 0, 0),
+        foreground = None):
+        resize_style = ResizeStyle.FIT
+        if mask:
+            resize_style = ResizeStyle.FILL
+        return ThumbnailManager(
+            thumbnail_generators = { None: ThumbnailGenerator(size=size, mask=mask, background=background, foreground=foreground, resize_style=resize_style, renderers=[PillowRenderer]) },
+            cache_dir = cache_dir
+        )
+
+    @staticmethod
     def simple_thumbnail_manager(
         cache_dir,
         size,
         mask = None,
         background = (0, 0, 0, 0),
         foreground = None):
+        resize_style = ResizeStyle.FIT
+        if mask:
+            resize_style = ResizeStyle.FILL
         return ThumbnailManager(
-            thumbnail_generators = { None: ThumbnailGenerator(size=size, mask=mask, background=background, foreground=foreground) },
+            thumbnail_generators = { None: ThumbnailGenerator(size=size, mask=mask, background=background, foreground=foreground, resize_style=resize_style) },
+            cache_dir = cache_dir
+        )
+
+    @staticmethod
+    def icon_thumbnail_manager(
+        cache_dir,
+        size,
+        mask = None,
+        background = (0, 0, 0, 0),
+        foreground = None,
+        iconset = IconSet):
+        resize_style = ResizeStyle.FIT
+        if mask:
+            resize_style = ResizeStyle.FILL
+        return ThumbnailManager(
+            thumbnail_generators = { None: ThumbnailGenerator(size=size, mask=mask, background=background, foreground=foreground, resize_style=resize_style, renderers=[PillowRenderer, Pdf2ImageRenderer, Html2ImageRenderer, iconset]) },
             cache_dir = cache_dir
         )
 

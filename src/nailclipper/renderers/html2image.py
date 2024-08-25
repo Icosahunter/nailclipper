@@ -22,7 +22,7 @@ class Html2ImageRenderer:
 
     @staticmethod
     def is_supported(uri):
-        return True
+        return Path(uri).suffix in ['.apng', '.avif', '.gif', '.jpeg', '.jpg', '.png', '.svg', '.webp', '.bmp', '.ico', '.pdf', '.txt', '.md']
 
     @staticmethod
     def from_url(url, size, save_path):
@@ -36,9 +36,9 @@ class Html2ImageRenderer:
             image.save(save_path)
             return True
         except Exception as e:
-            warn(f'Could not generate thumbnail for {Html2ImageRenderer.url} using Html2ImageRenderer: {e}')
+            warn(f'Could not generate thumbnail for {url} using Html2ImageRenderer: {e}')
             return False
-    
+
     @staticmethod
     def from_path(file, size, save_path):
         return Html2ImageRenderer.from_url(Path(file).as_uri, size, save_path)
