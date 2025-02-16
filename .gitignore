@@ -1,4 +1,5 @@
 .ropeproject
+.zed
 venv
 __pycache__
 .vscode
