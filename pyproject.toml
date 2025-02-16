@@ -1,0 +1,12 @@
+[build-system]
+requires = ['setuptools']
+build-backend = 'setuptools.build_meta'
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+
+[project]
+name = 'nailclipper'
+version = '0.0.0'
+description = 'A powerful thumbnail manager for Python.'
+dynamic = ["dependencies"]

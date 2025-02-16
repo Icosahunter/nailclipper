@@ -1,6 +1,7 @@
 .ropeproject
+.vscode
 .zed
 venv
+dist
 __pycache__
-.vscode
 *.pyc

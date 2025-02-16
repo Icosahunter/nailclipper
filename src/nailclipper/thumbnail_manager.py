@@ -1,15 +1,6 @@
-import os
 import hashlib
 import tempfile
-import mimetypes
-from warnings import warn
 from pathlib import Path
-from urllib.parse import urlparse, unquote
-
-from platformdirs import user_cache_dir
-from PIL import Image
-from PIL.PngImagePlugin import PngInfo
-
 from nailclipper.iconset import IconSet
 from nailclipper.renderers.html2image import Html2ImageRenderer
 from nailclipper.renderers.pdf2image import Pdf2ImageRenderer
