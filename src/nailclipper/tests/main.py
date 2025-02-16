@@ -8,12 +8,14 @@ import itertools
 import math
 from PIL import Image
 
-class FreedesktopThumbnailManagerTest(ut.TestCase):
+class NailclipperTestCase(ut.TestCase):
+
+    def configure(self, test_files_dir=None, test_file_globs=None):
+        self.test_files_dir = test_files_dir if test_files_dir else Path(__file__).parent / 'resources'
+        self.test_file_globs = test_file_globs if test_file_globs else []
 
     def setUp(self):
         self.tm = ThumbnailManager.freedesktop_thumbnail_manager()
-        self.test_files_dir = Path(__file__).parent / 'resources'
-        self.test_file_globs = ['red.*', 'green.*', 'blue.*']
         self.test_files = list(itertools.chain(*(self.test_files_dir.glob(x) for x in self.test_file_globs)))
         self.tempdir = TemporaryDirectory()
         self.test_dir = Path(self.tempdir.name)
@@ -21,6 +23,12 @@ class FreedesktopThumbnailManagerTest(ut.TestCase):
         shutil.copytree(self.test_files_dir, self.test_dir, dirs_exist_ok=True)
         self.addCleanup(self.tempdir.cleanup)
         self.addCleanup(lambda : (file.unlink() for file in self.generated_thumbnails))
+
+class FreedesktopThumbnailManagerTest(NailclipperTestCase):
+
+    def setUp(self):
+        self.configure(test_file_globs=['red.*', 'green.*', 'blue.*'])
+        super().setUp()
 
     def test_thumbnail_creation(self):
         for file in self.test_files:
@@ -87,6 +95,21 @@ class FreedesktopThumbnailManagerTest(ut.TestCase):
         self.assertEqual(color_1, color_3, 'Thumbnails do not match with no change in source file.')
         self.assertGreater(mtime_4, mtime_1, 'New thumbnail was NOT created when source file changed.')
         self.assertEqual(color_2, color_4, 'New thumbnail after altered source file does not match the altered file.')
+
+class ImageThumbnailManager(NailclipperTestCase):
+    pass
+
+class SimpleThumbnailManager(NailclipperTestCase):
+    pass
+
+class IconThumbnailManager(NailclipperTestCase):
+    pass
+
+class ThumbnailRenderersTest(NailclipperTestCase):
+    pass
+
+class ThumbnailGeneratorTest(NailclipperTestCase):
+    pass
 
 if __name__ == '__main__':
     ut.main()
