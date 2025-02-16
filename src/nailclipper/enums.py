@@ -99,11 +99,14 @@ class Compliance:
             and tm.cache_folders[Size.LARGE] == 'large'
             and tm.cache_folders[Size.XLARGE] == 'x-large'
             and tm.cache_folders[Size.XXLARGE] == 'xx-large'
-            and tm.resize_style in [ResizeStyle.FIT, ResizeStyle.PADDING]
-            and tm.mask == None
-            and tm.foreground == None
             and tm.cache_dir == CacheDir.FREEDESKTOP
             and tm.refresh_policy in [RefreshPolicy.FREEDESKTOP, RefreshPolicy.AUTO]
+            and all((
+                tg.resize_style in [ResizeStyle.FIT, ResizeStyle.PADDING]
+                and tg.mask == None
+                and tg.foreground == None
+                for tg in tm.thumbnail_generators.values()
+            ))
         )
 
     @staticmethod
@@ -113,14 +116,18 @@ class Compliance:
             and tm.cache_folders[Size.LARGE] == 'large'
             and tm.cache_folders[Size.XLARGE] == 'x-large'
             and tm.cache_folders[Size.XXLARGE] == 'xx-large'
-            and tm.background == (0, 0, 0, 0)
-            and tm.resize_style == ResizeStyle.FIT
-            and tm.mask == None
-            and tm.foreground == None
             and tm.cache_dir == CacheDir.FREEDESKTOP
             and tm.refresh_policy in [RefreshPolicy.FREEDESKTOP, RefreshPolicy.AUTO]
-            and tm.resample == Resample.AUTO
-            and tm.upscale == True
+            and all((
+                tg.background == (0, 0, 0, 0)
+                and tg.resize_style == ResizeStyle.FIT
+                and tg.mask == None
+                and tg.foreground == None
+                and tg.resample == Resample.AUTO
+                and tg.upscale == True
+                for tg in tm.thumbnail_generators.values()
+            ))
+
         )
 
     @staticmethod

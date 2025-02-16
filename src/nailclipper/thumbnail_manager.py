@@ -36,8 +36,8 @@ class ThumbnailManager:
         if RefreshPolicy._takes_args(self.refresh_policy):
             self.refresh_policy = self.refresh_policy()
 
-        #if not self.compliance(self):
-        #    raise ComplianceError(f'Options do not meet specified compliance spec "{self.compliance.__name__}"')
+        if not self.compliance(self):
+            raise ComplianceError(f'Options do not meet specified compliance spec "{self.compliance.__name__}"')
 
         for tg in set(thumbnail_generators.values()):
             tg.init()
@@ -57,7 +57,12 @@ class ThumbnailManager:
         if save_path.exists() and not self.refresh_policy(save_path, uri):
             return save_path
 
-        return self.thumbnail_generators[style].create_thumbnail(uri, save_path)
+        thumbnail = self.thumbnail_generators[style].create_thumbnail(uri, save_path)
+
+        if not thumbnail:
+            self._save_fail(uri)
+
+        return thumbnail
 
     def _thumbnail_path(self, uri, style):
         md5 = hashlib.md5()
@@ -72,8 +77,8 @@ class ThumbnailManager:
         else:
             return self.cache_dir
 
-    def save_fail(self, uri):
-        pass
+    def _save_fail(self, uri):
+        pass # TODO: Implement failed thumbnail creation part of Freedesktop spec
 
     @staticmethod
     def image_thumbnail_manager(

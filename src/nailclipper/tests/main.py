@@ -19,11 +19,8 @@ class FreedesktopThumbnailManagerTest(ut.TestCase):
         self.test_dir = Path(self.tempdir.name)
         self.generated_thumbnails = []
         shutil.copytree(self.test_files_dir, self.test_dir, dirs_exist_ok=True)
-
-    def doCleanups(self):
-        self.tempdir.cleanup()
-        for file in self.generated_thumbnails:
-            file.unlink()
+        self.addCleanup(self.tempdir.cleanup)
+        self.addCleanup(lambda : (file.unlink() for file in self.generated_thumbnails))
 
     def test_thumbnail_creation(self):
         for file in self.test_files:
