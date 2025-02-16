@@ -55,6 +55,9 @@ class ThumbnailManager:
         self._tempdir.cleanup()
 
     def get_thumbnail(self, uri, style=None):
+
+        uri = str(uri)
+
         if len(urlparse(uri).scheme) <= 1:
             uri = Path(uri).resolve().as_uri()
 

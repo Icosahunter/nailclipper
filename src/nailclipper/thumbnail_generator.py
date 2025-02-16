@@ -176,7 +176,7 @@ class ThumbnailGenerator:
         if parsed.scheme == 'file':
             path = Path(unquote(parsed.path))
             metadata.add_text('Thumb::MTime', str(os.stat(path).st_mtime))
-            metadata.add_text('Thumb::MSize', str(os.path.getsize(path)))
+            metadata.add_text('Thumb::Size', str(os.path.getsize(path)))
         metadata.add_text('Thumb::URI', uri)
         mimetype = mimetypes.guess_type(uri, strict=False)[0]
         if mimetype is not None:

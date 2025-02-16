@@ -29,8 +29,8 @@ class RefreshPolicy:
             return False
         image = Image.open(thumbnail_path)
         file_path = unquote(urlparse(file_uri).path)
-        file_mtime = os.stat(file_path).st_mtime
-        file_size = os.path.getsize(file_path)
+        file_mtime = str(os.stat(file_path).st_mtime)
+        file_size = str(os.path.getsize(file_path))
         return ((not 'Thumb::MTime' in image.text) # When implementing shared cache, add 'and not thumbnail_manager.is_shared' check somehow
             or ('Thumb::MTime' in image.text and file_mtime != image.text['Thumb::MTime'])
             or ('Thumb::Size' in image.text and file_size != image.text['Thumb::Size']))

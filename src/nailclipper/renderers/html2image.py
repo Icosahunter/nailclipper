@@ -31,7 +31,7 @@ class Html2ImageRenderer:
             save_file = str(Path(save_path).name)
             Html2ImageRenderer.h2i.output_path = save_folder
             Html2ImageRenderer.h2i.screenshot(url=url, save_as=save_file)
-            image = Html2ImageRenderer.image.open(save_path)
+            image = Html2ImageRenderer.pil.Image.open(save_path)
             image = image.crop(image.getbbox())
             image.save(save_path)
             return True
