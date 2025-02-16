@@ -20,7 +20,7 @@ class FreedesktopThumbnailManagerTest(ut.TestCase):
         self.generated_thumbnails = []
         shutil.copytree(self.test_files_dir, self.test_dir, dirs_exist_ok=True)
 
-    def tearDown(self):
+    def doCleanups(self):
         self.tempdir.cleanup()
         for file in self.generated_thumbnails:
             file.unlink()
