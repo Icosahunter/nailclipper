@@ -82,8 +82,8 @@ class ThumbnailManager:
 
     @staticmethod
     def image_thumbnail_manager(
-        cache_dir,
-        size,
+        cache_dir = CacheDir.AUTO,
+        size = Size.NORMAL,
         mask = None,
         background = (0, 0, 0, 0),
         foreground = None):
@@ -97,8 +97,8 @@ class ThumbnailManager:
 
     @staticmethod
     def simple_thumbnail_manager(
-        cache_dir,
-        size,
+        cache_dir = CacheDir.AUTO,
+        size = Size.NORMAL,
         mask = None,
         background = (0, 0, 0, 0),
         foreground = None):
@@ -112,8 +112,8 @@ class ThumbnailManager:
 
     @staticmethod
     def icon_thumbnail_manager(
-        cache_dir,
-        size,
+        cache_dir = CacheDir.AUTO,
+        size = Size.NORMAL,
         mask = None,
         background = (0, 0, 0, 0),
         foreground = None,
@@ -122,7 +122,7 @@ class ThumbnailManager:
         if mask:
             resize_style = ResizeStyle.FILL
         return ThumbnailManager(
-            thumbnail_generators = { None: ThumbnailGenerator(size=size, mask=mask, background=background, foreground=foreground, resize_style=resize_style, renderers=[PillowRenderer, Pdf2ImageRenderer, Html2ImageRenderer, iconset]) },
+            thumbnail_generators = { None: ThumbnailGenerator(size=size, mask=mask, background=background, foreground=foreground, resize_style=resize_style, renderers=[PillowRenderer, Pdf2ImageRenderer, Html2ImageRenderer, IconSet]) },
             cache_dir = cache_dir
         )
 
