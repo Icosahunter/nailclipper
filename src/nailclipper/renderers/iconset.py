@@ -4,7 +4,7 @@ import itertools
 import copy
 from tkinter.constants import E
 
-balmy_file_icons_dir = Path(__file__).parent / 'data/balmy-icons'
+balmy_file_icons_dir = Path(__file__).parents[1] / 'data/balmy-icons'
 
 class IconSet:
 
@@ -16,7 +16,8 @@ class IconSet:
         'spreadsheet': balmy_file_icons_dir / 'spreadsheet.png',
         'executable': balmy_file_icons_dir / 'executable.png',
         'presentation': balmy_file_icons_dir / 'presentation.png',
-        'photo': balmy_file_icons_dir / 'photo.png',
+        'archive': balmy_file_icons_dir / 'archive.png',
+        'image': balmy_file_icons_dir / 'photo.png',
         'code': balmy_file_icons_dir / 'code.png',
         'audio': balmy_file_icons_dir / 'audio.png',
         'font': balmy_file_icons_dir / 'font.png',
@@ -53,7 +54,9 @@ class IconSet:
             self.categories = copy.deepcopy(IconSet.default_categories)
 
     def init(self):
-        pass
+        for x in self.categories.keys():
+            if x not in self.icons.keys():
+                raise KeyError(f"'{x}' file category has no associated icon.")
 
     def is_supported(self, uri):
         if None in self.icons:

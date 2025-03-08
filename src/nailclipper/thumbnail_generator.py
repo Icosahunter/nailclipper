@@ -62,7 +62,7 @@ class ThumbnailGenerator:
         if self.mask:
             image = self._apply_mask(image, Image.open(self.mask))
 
-        metadata = self._thumbnail_metadata(uri)
+        metadata = ThumbnailGenerator._thumbnail_metadata(uri)
 
         image.save(save_path, 'png', pnginfo=metadata)
 
@@ -78,6 +78,8 @@ class ThumbnailGenerator:
         path = file.name
         for renderer in self.renderers:
             if renderer.is_supported(uri):
+
+                # TODO: Clean this up, it tries generating with from_url if from_file doesn't work... which is an odd behavior I think since usually one calls the other
                 if parsed.scheme == 'file' and hasattr(renderer, 'from_file') and renderer.from_file(Path(parsed.path), size, file.name):
                     success = True
                     break
@@ -170,7 +172,8 @@ class ThumbnailGenerator:
             y = 0
         return (int(x), int(y), int(w), int(h))
 
-    def _thumbnail_metadata(self, uri):
+    @staticmethod
+    def _thumbnail_metadata(uri):
         metadata = PngInfo()
         parsed = urlparse(uri)
         if parsed.scheme == 'file':
@@ -182,3 +185,10 @@ class ThumbnailGenerator:
         if mimetype is not None:
             metadata.add_text('Thumb::Mimetype', mimetype)
         return metadata
+
+    @staticmethod
+    def create_fail_thumbnail(uri, save_path):
+        save_path.parent.mkdir(parents=True, exist_ok=True)
+        image = Image.new('RGBA', (1, 1))
+        metadata = ThumbnailGenerator._thumbnail_metadata(uri)
+        image.save(save_path, 'png', pnginfo=metadata)

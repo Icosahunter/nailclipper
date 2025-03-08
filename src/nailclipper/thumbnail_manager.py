@@ -1,10 +1,7 @@
 import hashlib
 import tempfile
 from pathlib import Path
-from nailclipper.iconset import IconSet
-from nailclipper.renderers.html2image import Html2ImageRenderer
-from nailclipper.renderers.pdf2image import Pdf2ImageRenderer
-from nailclipper.renderers.pillow import PillowRenderer
+from nailclipper.renderers import *
 from nailclipper.thumbnail_generator import ThumbnailGenerator
 from nailclipper.enums import *
 
@@ -18,7 +15,8 @@ class ThumbnailManager:
             thumbnail_generators = { None: ThumbnailGenerator() },
             cache_dir = CacheDir.AUTO,
             compliance = Compliance.NONE,
-            refresh_policy = RefreshPolicy.AUTO):
+            refresh_policy = RefreshPolicy.AUTO,
+            thumbnail_fail_folder = 'fail'):
 
         #TODO: implement 'shared' thumbnails part of the Freedesktop spec
 
@@ -27,6 +25,7 @@ class ThumbnailManager:
         self.cache_dir = cache_dir
         self.compliance = compliance
         self.refresh_policy = refresh_policy
+        self.thumbnail_fail_folder = thumbnail_fail_folder
 
         if type(self.cache_dir) == str:
             self.cache_dir = Path(self.cache_dir)
@@ -53,32 +52,41 @@ class ThumbnailManager:
             uri = Path(uri).resolve().as_uri()
 
         save_path = self._thumbnail_path(uri, style)
+        fail_path = self._thumbnail_fail_path(uri)
+
+        # Current implementation will always return None if we can't get an up-to-date
+        # thumbnail. Should we instead return a stale thumbnail if it exists?
 
         if save_path.exists() and not self.refresh_policy(save_path, uri):
             return save_path
 
+        if fail_path.exists():
+            return None
+
         thumbnail = self.thumbnail_generators[style].create_thumbnail(uri, save_path)
 
         if not thumbnail:
-            self._save_fail(uri)
+            ThumbnailGenerator.create_fail_thumbnail(uri, fail_path)
 
         return thumbnail
 
     def _thumbnail_path(self, uri, style):
         md5 = hashlib.md5()
         md5.update(uri.encode('ascii'))
-        return self._thumbnail_cache_dir(uri) / self.cache_folders[style] / f'{md5.hexdigest()}.png'
+        return self._thumbnail_cache_dir() / self.cache_folders[style] / f'{md5.hexdigest()}.png'
 
-    def _thumbnail_cache_dir(self, uri):
+    def _thumbnail_fail_path(self, uri):
+        md5 = hashlib.md5()
+        md5.update(uri.encode('ascii'))
+        return self._thumbnail_cache_dir() / self.thumbnail_fail_folder / f'{md5.hexdigest()}.png'
+
+    def _thumbnail_cache_dir(self):
         if self.cache_dir == CacheDir.AUTO:
                 return Path('./cache/thumbnails/')
         elif self.cache_dir == CacheDir.TEMP:
             return Path(self._tempdir.name)
         else:
             return self.cache_dir
-
-    def _save_fail(self, uri):
-        pass # TODO: Implement failed thumbnail creation part of Freedesktop spec
 
     @staticmethod
     def image_thumbnail_manager(
@@ -122,12 +130,12 @@ class ThumbnailManager:
         if mask:
             resize_style = ResizeStyle.FILL
         return ThumbnailManager(
-            thumbnail_generators = { None: ThumbnailGenerator(size=size, mask=mask, background=background, foreground=foreground, resize_style=resize_style, renderers=[PillowRenderer, Pdf2ImageRenderer, Html2ImageRenderer, IconSet]) },
+            thumbnail_generators = { None: ThumbnailGenerator(size=size, mask=mask, background=background, foreground=foreground, resize_style=resize_style, renderers=[PillowRenderer, IconSet]) },
             cache_dir = cache_dir
         )
 
     @staticmethod
-    def freedesktop_thumbnail_manager():
+    def freedesktop_thumbnail_manager(application_name, application_version):
         return ThumbnailManager(
             cache_folders = {
                 None: 'normal',
@@ -145,5 +153,6 @@ class ThumbnailManager:
             },
             cache_dir = CacheDir.FREEDESKTOP,
             compliance = Compliance.FREEDESKTOP,
-            refresh_policy = RefreshPolicy.FREEDESKTOP
+            refresh_policy = RefreshPolicy.FREEDESKTOP,
+            thumbnail_fail_folder = f'fail/{application_name}-{application_version}'
         )

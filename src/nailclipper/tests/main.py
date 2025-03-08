@@ -1,9 +1,10 @@
 import unittest as ut
 from nailclipper import ThumbnailManager
 from nailclipper.enums import *
-from nailclipper.iconset import IconSet
+from nailclipper.renderers import IconSet
 from pathlib import Path
 from tempfile import TemporaryDirectory
+import tomllib
 import os
 import shutil
 import itertools
@@ -108,7 +109,13 @@ class ThumbnailManagerTestCase(ut.TestCase):
 class FreedesktopThumbnailManagerTestCase(ThumbnailManagerTestCase):
 
     def setUp(self):
-        self.configure(thumbnail_manager=ThumbnailManager.freedesktop_thumbnail_manager(), test_cache_dir=CacheDir.FREEDESKTOP)
+        appname = ''
+        appver = ''
+        with open(Path(__file__).parents[3] / 'pyproject.toml', 'rb') as f:
+            data = tomllib.load(f)
+            appname = data['project']['name']
+            appver = data['project']['version']
+        self.configure(thumbnail_manager=ThumbnailManager.freedesktop_thumbnail_manager(appname, appver), test_cache_dir=CacheDir.FREEDESKTOP)
         super().setUp()
 
     def test_thumbnail_sizes(self):
@@ -134,7 +141,7 @@ class SimpleThumbnailManagerTestCase(ThumbnailManagerTestCase):
 
 class IconThumbnailManagerTestCase(ThumbnailManagerTestCase):
     def setUp(self):
-        self.configure(thumbnail_manager=ThumbnailManager.icon_thumbnail_manager(), test_file_globs=['red.*', 'green.*', 'blue.*', 'script.sh'])
+        self.configure(thumbnail_manager=ThumbnailManager.icon_thumbnail_manager(), test_file_globs=['red.jpg', 'green.jpg', 'blue.jpg', 'script.sh'])
         super().setUp()
 
     def test_thumbnail_creation(self):
@@ -144,7 +151,7 @@ class IconThumbnailManagerTestCase(ThumbnailManagerTestCase):
             self.assertTrue(thumbnail, f'Thumbnail creation for {file} failed.')
             self.assertTrue(thumbnail.exists(), f'Thumbnail file {thumbnail} for {file} does not exist.')
             self.assertIn(self.test_cache_dir, thumbnail.parents, f'Thumbnail for {file} was put in the wrong cache directory.')
-            if file.stem in ['red', 'green', 'blue']:
+            if file.name in ['red', 'green', 'blue']:
                 expected_color = None
                 if file.stem == 'red':
                     expected_color = (255,0,0,255)
