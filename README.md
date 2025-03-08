@@ -1,7 +1,7 @@
 # Nailclipper
 
 <p align="center">
-    <img src="src/resources/nailclipper.png" width="150">
+    <img src="assets/nailclipper.png" width="150">
 </p>
 
 Nailclipper is a Python module for managing thumbnails (or possibly other image or file caches). Nailclipper includes the capability to be compliant with the [Freedesktop Thumbnail Specification](https://specifications.freedesktop.org/thumbnail-spec/thumbnail-spec-latest.html) if that is what you want, but it is also highly configurable.
