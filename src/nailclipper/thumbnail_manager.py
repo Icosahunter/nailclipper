@@ -154,5 +154,5 @@ class ThumbnailManager:
             cache_dir = CacheDir.FREEDESKTOP,
             compliance = Compliance.FREEDESKTOP,
             refresh_policy = RefreshPolicy.FREEDESKTOP,
-            thumbnail_fail_folder = f'fail/{application_name}-{application_version}'
+            fail_folder = f'fail/{application_name}-{application_version}'
         )

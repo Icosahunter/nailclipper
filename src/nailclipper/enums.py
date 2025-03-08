@@ -3,6 +3,7 @@ import time
 from pathlib import Path
 from urllib.parse import urlparse, unquote
 import platform
+import re
 
 from PIL import Image
 
@@ -100,6 +101,7 @@ class Compliance:
             and tm.cache_folders[Size.XLARGE] == 'x-large'
             and tm.cache_folders[Size.XXLARGE] == 'xx-large'
             and tm.cache_dir == CacheDir.FREEDESKTOP
+            and re.match(r'fail\/.+-.+', tm.fail_folder)
             and tm.refresh_policy in [RefreshPolicy.FREEDESKTOP, RefreshPolicy.AUTO]
             and all((
                 tg.resize_style in [ResizeStyle.FIT, ResizeStyle.PADDING]
@@ -117,6 +119,7 @@ class Compliance:
             and tm.cache_folders[Size.XLARGE] == 'x-large'
             and tm.cache_folders[Size.XXLARGE] == 'xx-large'
             and tm.cache_dir == CacheDir.FREEDESKTOP
+            and re.match(r'fail\/.+-.+', tm.fail_folder)
             and tm.refresh_policy in [RefreshPolicy.FREEDESKTOP, RefreshPolicy.AUTO]
             and all((
                 tg.background == (0, 0, 0, 0)
