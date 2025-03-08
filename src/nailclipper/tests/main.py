@@ -8,6 +8,8 @@ import os
 import shutil
 import itertools
 import math
+import sys
+from hashlib import md5
 from PIL import Image
 
 class ThumbnailManagerTestCase(ut.TestCase):
@@ -132,7 +134,7 @@ class SimpleThumbnailManagerTestCase(ThumbnailManagerTestCase):
 
 class IconThumbnailManagerTestCase(ThumbnailManagerTestCase):
     def setUp(self):
-        self.configure(thumbnail_manager=ThumbnailManager.simple_thumbnail_manager(), test_file_globs=['red.*', 'green.*', 'blue.*', 'script.sh'])
+        self.configure(thumbnail_manager=ThumbnailManager.icon_thumbnail_manager(), test_file_globs=['red.*', 'green.*', 'blue.*', 'script.sh'])
         super().setUp()
 
     def test_thumbnail_creation(self):
@@ -158,7 +160,13 @@ class IconThumbnailManagerTestCase(ThumbnailManagerTestCase):
                 color_distance = math.dist(expected_color, actual_color)
                 self.assertLess(color_distance, 3, f'Thumbnail for {file} does not match source image.')
             else:
-                self.assertEqual(thumbnail, IconSet.default_icons['script'])
+                icon_hash = ''
+                with open(IconSet.default_icons['script'], 'rb') as f:
+                    icon_hash = md5().update(f.read())
+                thumbnail_hash = ''
+                with open(thumbnail, 'rb') as f:
+                    thumbnail_hash = md5().update(f.read())
+                self.assertEqual(thumbnail_hash, icon_hash)
 
 #class ThumbnailRenderersTest(ThumbnailManagerTestCaseBase):
 #    pass
@@ -166,5 +174,13 @@ class IconThumbnailManagerTestCase(ThumbnailManagerTestCase):
 #class ThumbnailGeneratorTest(ThumbnailManagerTestCaseBase):
 #    pass
 
+def print_suite(suite):
+    if hasattr(suite, '__iter__'):
+        for x in suite:
+            print_suite(x)
+    else:
+        print(suite)
+
 if __name__ == '__main__':
-    ut.main()
+    test_case = sys.argv[1] if len(sys.argv) > 1 else None
+    ut.main(defaultTest=test_case)

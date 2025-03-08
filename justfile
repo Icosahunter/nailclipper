@@ -15,8 +15,8 @@ build: setup clean
 install: build
     python3 -m pip install --force-reinstall ./dist/*.whl
 
-test:
+test test_case="":
     #!/usr/bin/env sh
     source venv/bin/activate
     cd src
-    python3 -m nailclipper.tests.main
+    python3 -m nailclipper.tests.main {{test_case}}

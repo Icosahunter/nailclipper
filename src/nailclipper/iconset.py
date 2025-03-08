@@ -2,8 +2,9 @@ from pathlib import Path
 import shutil
 import itertools
 import copy
+from tkinter.constants import E
 
-balmy_file_icons_dir = Path(__file__).parents[1] / 'resources/balmy-icons'
+balmy_file_icons_dir = Path(__file__).parent / 'data/balmy-icons'
 
 class IconSet:
 
@@ -51,9 +52,8 @@ class IconSet:
         else:
             self.categories = copy.deepcopy(IconSet.default_categories)
 
-    @staticmethod
-    def init():
-        return IconSet()
+    def init(self):
+        pass
 
     def is_supported(self, uri):
         if None in self.icons:
