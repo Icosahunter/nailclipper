@@ -16,7 +16,7 @@ class ThumbnailManager:
             cache_dir = CacheDir.AUTO,
             compliance = Compliance.NONE,
             refresh_policy = RefreshPolicy.AUTO,
-            thumbnail_fail_folder = 'fail'):
+            fail_folder = 'fail'):
 
         #TODO: implement 'shared' thumbnails part of the Freedesktop spec
 
@@ -25,7 +25,7 @@ class ThumbnailManager:
         self.cache_dir = cache_dir
         self.compliance = compliance
         self.refresh_policy = refresh_policy
-        self.thumbnail_fail_folder = thumbnail_fail_folder
+        self.fail_folder = fail_folder
 
         if type(self.cache_dir) == str:
             self.cache_dir = Path(self.cache_dir)
@@ -78,7 +78,7 @@ class ThumbnailManager:
     def _thumbnail_fail_path(self, uri):
         md5 = hashlib.md5()
         md5.update(uri.encode('ascii'))
-        return self._thumbnail_cache_dir() / self.thumbnail_fail_folder / f'{md5.hexdigest()}.png'
+        return self._thumbnail_cache_dir() / self.fail_folder / f'{md5.hexdigest()}.png'
 
     def _thumbnail_cache_dir(self):
         if self.cache_dir == CacheDir.AUTO:

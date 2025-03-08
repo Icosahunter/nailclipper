@@ -37,7 +37,7 @@ The easiest way to use Nailclipper is to use one of the presets. Most users will
         size = (256, 256)
     )
 
-    # The icon thumbnail manager is like the simple thumbnail generator, but it will use icons as a backup if a thumbnail can't be generated
+    # The icon thumbnail manager is like the image thumbnail generator, but it will use icons as a backup if a thumbnail can't be generated
     # This preset is especially helpful for file browser type use cases
     icon_tm = ThumbnailManager.icon_thumbnail_manager(
         cache_dir = './cache/thumbnails',
@@ -51,7 +51,16 @@ If further customization is needed, it's *slightly* more complicated.
 
 There are a two main parts to Nailclipper, the ThumbnailGenerator (which contains configuration for how to render/resize/etc the thumbnails) and the ThumbnailManager (which contains configuration for how to store and retrieve cached thumbnails).
 
-The ThumbnailManager can create different styles of thumbnails (by using different ThumbnailGenerators) and store them in different folders (relative to the cache_dir). You give a name for each of these styles and then use that name when calling the get_thumbnail method. The default name when getting a thumbnail is a `None` value, so you can use this if you don't need different types of thumbnails. Here is an example to clarify:
+The ThumbnailManager can create different styles of thumbnails (by using different ThumbnailGenerators)
+and store them in different folders (relative to the cache_dir).
+You give a name for each of these styles and then use that name when calling the get_thumbnail method.
+The default name when getting a thumbnail is a `None` value, so you can use this if you don't need different types of thumbnails
+or for convenience for the most used thumbnail type.
+
+There is also a fail folder, to store information about a failed thumbnail creation.
+The format for this is according to the Freedesktop thumbnail spec, so an empty PNG will be created with some metadata about the image, etc.
+
+Here is an example to clarify:
 
 ```python
     from nailclipper import ThumbnailGenerator, ThumbnailManager, ResizeStyle
@@ -71,7 +80,8 @@ The ThumbnailManager can create different styles of thumbnails (by using differe
             'small': small_tg,
             'normal': normal_tg,
             'preview': preview_tg
-        }
+        },
+        fail_folder = 'fail'
     )
 
     preview_path = tm.get_thumbnail('my_file.pdf', 'preview')       # get the large unstyled preview image
