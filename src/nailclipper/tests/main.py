@@ -1,5 +1,5 @@
 import unittest as ut
-from nailclipper import ThumbnailManager
+from nailclipper import ThumbnailManager, ThumbnailGenerator
 from nailclipper.enums import *
 from nailclipper.renderers import IconSet
 from pathlib import Path
@@ -11,6 +11,7 @@ import itertools
 import math
 import sys
 from hashlib import md5
+from importlib.metadata import version
 from PIL import Image
 
 class ThumbnailManagerTestCase(ut.TestCase):
@@ -109,12 +110,8 @@ class ThumbnailManagerTestCase(ut.TestCase):
 class FreedesktopThumbnailManagerTestCase(ThumbnailManagerTestCase):
 
     def setUp(self):
-        appname = ''
-        appver = ''
-        with open(Path(__file__).parents[3] / 'pyproject.toml', 'rb') as f:
-            data = tomllib.load(f)
-            appname = data['project']['name']
-            appver = data['project']['version']
+        appname = ThumbnailManager.__module__.split('.')[0]
+        appver = version(appname)
         self.configure(thumbnail_manager=ThumbnailManager.freedesktop_thumbnail_manager(appname, appver), test_cache_dir=CacheDir.FREEDESKTOP)
         super().setUp()
 
@@ -178,8 +175,81 @@ class IconThumbnailManagerTestCase(ThumbnailManagerTestCase):
 #class ThumbnailRenderersTest(ThumbnailManagerTestCaseBase):
 #    pass
 
-#class ThumbnailGeneratorTest(ThumbnailManagerTestCaseBase):
-#    pass
+class ThumbnailGeneratorTestCase(ut.TestCase):
+
+    def setUp(self):
+        self.test_files_dir=Path(__file__).parent / 'resources'
+        self.tempdir = TemporaryDirectory()
+        self.test_dir = Path(self.tempdir.name)
+        self.cache_dir = self.test_dir / 'thumbnails'
+        self.generated_thumbnails = []
+        shutil.copytree(self.test_files_dir, self.test_dir, dirs_exist_ok=True)
+        os.chdir(self.test_dir)
+        self.addCleanup(self.tempdir.cleanup)
+
+    def test_resize_style(self):
+
+        tg = ThumbnailGenerator(size=(256, 256), resize_style=ResizeStyle.FILL)
+        thumbnail = tg.create_thumbnail(self.test_dir / 'resize.png', self.cache_dir / 'resize_fill.jpg')
+        self.generated_thumbnails.append(thumbnail)
+        with Image.open(thumbnail) as im:
+            self.assertEqual(im.getpixel((127, 0)), (255, 0, 0, 255), 'Top color of FILL resize thumbnail not as expected.')
+            self.assertEqual(im.getpixel((127, 127)), (255, 0, 0, 255), 'Middle color of FILL resize thumbnail not as expected.')
+            self.assertEqual(im.getpixel((127, 255)), (255, 0, 0, 255), 'Bottom color of FILL resize thumbnail not as expected.')
+            self.assertEqual(im.getpixel((0, 127)), (255, 0, 0, 255), 'Left color of FILL resize thumbnail not as expected.')
+            self.assertEqual(im.getpixel((255, 127)), (255, 0, 0, 255), 'Right color of FILL resize thumbnail not as expected.')
+            self.assertEqual(im.size, (256, 256), 'FILL resize thumbnail size not as expected.')
+
+        tg.resize_style = ResizeStyle.FIT
+        thumbnail = tg.create_thumbnail(self.test_dir / 'resize.png', self.cache_dir / 'resize_fit.jpg')
+        self.generated_thumbnails.append(thumbnail)
+        with Image.open(thumbnail) as im:
+            self.assertEqual(im.getpixel((43, 0)), (0, 0, 255, 255), 'Top color of FIT resize thumbnail not as expected.')
+            self.assertEqual(im.getpixel((43, 127)), (255, 0, 0, 255), 'Middle color of FIT resize thumbnail not as expected.')
+            self.assertEqual(im.getpixel((43, 255)), (0, 0, 255, 255), 'Bottom color of FIT resize thumbnail not as expected.')
+            self.assertEqual(im.getpixel((0, 127)), (255, 0, 0, 255), 'Left color of FIT resize thumbnail not as expected.')
+            self.assertEqual(im.getpixel((84, 127)), (255, 0, 0, 255), 'Right color of FIT resize thumbnail not as expected.')
+            self.assertEqual(im.size, (85, 256), 'FIT resize thumbnail size not as expected.')
+
+        tg.resize_style = ResizeStyle.PADDING
+        thumbnail = tg.create_thumbnail(self.test_dir / 'resize.png', self.cache_dir / 'resize_fit.jpg')
+        self.generated_thumbnails.append(thumbnail)
+        with Image.open(thumbnail) as im:
+            self.assertEqual(im.getpixel((127, 0)), (0, 0, 255, 255), 'Top color of PADDING resize thumbnail not as expected.')
+            self.assertEqual(im.getpixel((127, 127)), (255, 0, 0, 255), 'Middle color of PADDING resize thumbnail not as expected.')
+            self.assertEqual(im.getpixel((127, 255)), (0, 0, 255, 255), 'Bottom color of PADDING resize thumbnail not as expected.')
+            self.assertEqual(im.getpixel((0, 127)), (0, 0, 0, 0), 'Left color of PADDING resize thumbnail not as expected.')
+            self.assertEqual(im.getpixel((255, 127)), (0, 0, 0, 0), 'Right color of PADDING resize thumbnail not as expected.')
+            self.assertEqual(im.size, (256, 256), 'PADDING resize thumbnail size not as expected.')
+
+        tg.resize_style = ResizeStyle.STRETCH
+        thumbnail = tg.create_thumbnail(self.test_dir / 'resize.png', self.cache_dir / 'resize_stretch.jpg')
+        self.generated_thumbnails.append(thumbnail)
+        with Image.open(thumbnail) as im:
+            self.assertEqual(im.getpixel((127, 0)), (0, 0, 255, 255), 'Top color of STRETCH resize thumbnail not as expected.')
+            self.assertEqual(im.getpixel((127, 127)), (255, 0, 0, 255), 'Middle color of STRETCH resize thumbnail not as expected.')
+            self.assertEqual(im.getpixel((127, 255)), (0, 0, 255, 255), 'Bottom color of STRETCH resize thumbnail not as expected.')
+            self.assertEqual(im.getpixel((0, 127)), (255, 0, 0, 255), 'Left color of STRETCH resize thumbnail not as expected.')
+            self.assertEqual(im.getpixel((255, 127)), (255, 0, 0, 255), 'Right color of STRETCH resize thumbnail not as expected.')
+            self.assertEqual(im.size, (256, 256), 'STRETCH resize thumbnail size not as expected.')
+
+    # def test_mask(self):
+    #     pass
+
+    # def test_resample(self):
+    #     pass
+
+    # def test_upscale(self):
+    #     pass
+
+    # def test_color_background(self):
+    #     pass
+
+    # def test_background_foreground(self):
+    #     pass
+
+    # def test_size(self):
+    #     pass
 
 def print_suite(suite):
     if hasattr(suite, '__iter__'):

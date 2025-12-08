@@ -1,3 +1,5 @@
+build
 pillow
 platformdirs
-html2image
+pdf2image[all_renderers]
+cairosvg[all_renderers]

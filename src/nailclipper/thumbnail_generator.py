@@ -7,13 +7,13 @@ from urllib.parse import urlparse, unquote
 from PIL import Image
 from PIL.PngImagePlugin import PngInfo
 
-from nailclipper.renderers import PillowRenderer, Html2ImageRenderer, Pdf2ImageRenderer
+from nailclipper.renderers import PillowRenderer, Pdf2ImageRenderer, CairoRenderer
 from nailclipper.enums import *
 
 class ThumbnailGenerator:
 
     def __init__(self,
-            renderers = [PillowRenderer, Pdf2ImageRenderer, Html2ImageRenderer],
+            renderers = [PillowRenderer, Pdf2ImageRenderer, CairoRenderer],
             resize_style = ResizeStyle.FIT,
             mask = None,
             resample = Resample.AUTO,
@@ -42,6 +42,9 @@ class ThumbnailGenerator:
 
     def create_thumbnail(self, uri, save_path):
 
+        if len(urlparse(str(uri)).scheme) <= 1:
+            uri = Path(uri).resolve().as_uri()
+
         save_path.parent.mkdir(parents=True, exist_ok=True)
 
         image = self._render_thumbnail(uri, self.size)
@@ -69,13 +72,15 @@ class ThumbnailGenerator:
         return save_path
 
     def _render_thumbnail(self, uri, size):
-        success = False
+
         parsed = urlparse(uri)
+        success = False
         image = None
 
         file = tempfile.NamedTemporaryFile(delete=False, suffix='.png')
         file.close()
         path = file.name
+
         for renderer in self.renderers:
             if renderer.is_supported(uri):
 

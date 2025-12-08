@@ -82,7 +82,7 @@ class ResizeStyle:
     """ Options for how to resize rendered images. """
     FIT     = object()
     FILL    = object()
-    PADDING = object()
+    PADDING = object() # Make this a function to set the padding color?
     STRETCH = object()
 
 class Resample:

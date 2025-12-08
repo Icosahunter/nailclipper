@@ -1,1 +1,2 @@
 include src/nailclipper/data/**/*
+include src/nailclipper/tests/resources/*

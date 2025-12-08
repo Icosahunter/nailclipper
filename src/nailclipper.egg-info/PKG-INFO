@@ -1,8 +1,11 @@
-Metadata-Version: 2.2
+Metadata-Version: 2.4
 Name: nailclipper
 Version: 0.0.0
 Summary: A powerful thumbnail manager for Python.
 License-File: LICENSE
+Requires-Dist: build
 Requires-Dist: pillow
 Requires-Dist: platformdirs
-Requires-Dist: html2image
+Requires-Dist: pdf2image[all_renderers]
+Requires-Dist: cairosvg[all_renderers]
+Dynamic: license-file
