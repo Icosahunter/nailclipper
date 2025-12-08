@@ -1,5 +1,0 @@
-build
-pillow
-platformdirs
-pdf2image[all_renderers]
-cairosvg[all_renderers]

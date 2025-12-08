@@ -233,14 +233,39 @@ class ThumbnailGeneratorTestCase(ut.TestCase):
             self.assertEqual(im.getpixel((255, 127)), (255, 0, 0, 255), 'Right color of STRETCH resize thumbnail not as expected.')
             self.assertEqual(im.size, (256, 256), 'STRETCH resize thumbnail size not as expected.')
 
-    # def test_mask(self):
-    #     pass
+    def test_mask(self):
+         tg = ThumbnailGenerator(size=(256, 256), mask=self.test_dir / 'mask.png')
+         thumbnail = tg.create_thumbnail(self.test_dir / 'red_bg.png', self.cache_dir / 'resize_fill.jpg')
+         self.generated_thumbnails.append(thumbnail)
+         with Image.open(thumbnail) as im:
+             self.assertEqual(im.getpixel((127, 0)), (0, 0, 0, 0), 'Top color of mask test thumbnail not as expected.')
+             self.assertEqual(im.getpixel((127, 127)), (255, 0, 0, 255), 'Middle color of mask test resize thumbnail not as expected.')
+             self.assertEqual(im.getpixel((127, 255)), (0, 0, 0, 0), 'Bottom color of mask test resize thumbnail not as expected.')
+             self.assertEqual(im.getpixel((0, 127)), (0, 0, 0, 0), 'Left color of mask test resize thumbnail not as expected.')
+             self.assertEqual(im.getpixel((255, 127)), (0, 0, 0, 0), 'Right color of mask test resize thumbnail not as expected.')
 
-    # def test_resample(self):
-    #     pass
+    def test_resample(self):
+        tg = ThumbnailGenerator(size=(128, 128), resample=Resample.AUTO)
+        thumbnail = tg.create_thumbnail(self.test_dir / 'pixel_art.png', self.cache_dir / 'resize_fill.jpg')
+        self.generated_thumbnails.append(thumbnail)
+        with Image.open(thumbnail) as im:
+            self.assertEqual(im.getpixel((0, 0)), (0, 0, 0, 255), 'Color of top left corner of first square in pixel_art thumbnail not as expected.')
+            self.assertEqual(im.getpixel((7, 7)), (0, 0, 0, 255), 'Color of bottom left corner of first square in pixel_art thumbnail not as expected.')
+            self.assertEqual(im.getpixel((8, 0)), (255, 255, 255, 255), 'Color of top left corner of second square in pixel_art thumbnail not as expected.')
+            self.assertEqual(im.getpixel((15, 7)), (255, 255, 255, 255), 'Color of bottom left corner of second square in pixel_art thumbnail not as expected.')
 
-    # def test_upscale(self):
-    #     pass
+    def test_upscale(self):
+        tg = ThumbnailGenerator(size=(128, 128), upscale=False)
+        thumbnail = tg.create_thumbnail(self.test_dir / 'pixel_art.png', self.cache_dir / 'resize_fill.jpg')
+        self.generated_thumbnails.append(thumbnail)
+        with Image.open(thumbnail) as im:
+            self.assertEqual(im.size, (16, 16), 'No upscale test thumbnail size not as expected.')
+
+        tg = ThumbnailGenerator(size=(128, 128), upscale=True)
+        thumbnail = tg.create_thumbnail(self.test_dir / 'pixel_art.png', self.cache_dir / 'resize_fill.jpg')
+        self.generated_thumbnails.append(thumbnail)
+        with Image.open(thumbnail) as im:
+            self.assertEqual(im.size, (128, 128), 'Upscale test thumbnail size not as expected.')
 
     # def test_color_background(self):
     #     pass

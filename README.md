@@ -115,7 +115,7 @@ Here is an example to clarify:
 
 `mask`: The path to a mask image to apply to the thumbnails. The mask will be scaled with ResizeStyle.STRETCH to the thumbnail size, so it is suggested to supply the mask as the largest size you intend to generate the (masked) thumbnails at. You probably want to use `resize_style=ResizeStyle.FILL` if you are using a mask.
 
-`upscale`: If `true` images are upscaled if the requested thumbnai size is actually larger than the source image.
+`upscale`: If `true` images are upscaled if the requested thumbnail size is actually larger than the source image.
 
 `resize_style`: Specifies how rendered images are resized to the requested thumbnail size.
 - `ResizeStyle.FIT`: Scale the image so it fits within the thumbnail size. The resulting image will have the same aspect ratio as the original.

@@ -53,6 +53,7 @@ class ThumbnailGenerator:
             return image
 
         image = image.convert('RGBA')
+
         image = self._resize_image(image, self.size, self.resize_style)
 
         background = self._create_ground(self.background, image.size, self.size)
