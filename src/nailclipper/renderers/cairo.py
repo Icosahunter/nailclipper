@@ -11,7 +11,7 @@ class CairoRenderer:
             import cairosvg
             CairoRenderer.cairo = cairosvg
         except Exception as e:
-            warn(f'Could not load ResvgRenderer: {e}')
+            warn(f'Could not load CairoRenderer: {e}')
 
     @staticmethod
     def is_supported(uri):
@@ -23,5 +23,5 @@ class CairoRenderer:
             CairoRenderer.cairo.svg2png(url=str(file), write_to=str(save_path))
             return True
         except Exception as e:
-            warn(f'Could not generate thumbnail for {file} using ResvgRenderer: {e}')
+            warn(f'Could not generate thumbnail for {file} using CairoRenderer: {e}')
             return False

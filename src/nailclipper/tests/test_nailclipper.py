@@ -11,7 +11,6 @@ import itertools
 import math
 import sys
 from hashlib import md5
-from importlib.metadata import version
 from PIL import Image
 
 class ThumbnailManagerTestCase(ut.TestCase):
@@ -111,7 +110,9 @@ class FreedesktopThumbnailManagerTestCase(ThumbnailManagerTestCase):
 
     def setUp(self):
         appname = ThumbnailManager.__module__.split('.')[0]
-        appver = version(appname)
+        appver = None
+        with open(Path(__file__).parents[3] / 'pyproject.toml', 'rb') as f:
+            appver = tomllib.load(f)['project']['version']
         self.configure(thumbnail_manager=ThumbnailManager.freedesktop_thumbnail_manager(appname, appver), test_cache_dir=CacheDir.FREEDESKTOP)
         super().setUp()
 
@@ -212,7 +213,7 @@ class ThumbnailGeneratorTestCase(ut.TestCase):
             self.assertEqual(im.size, (85, 256), 'FIT resize thumbnail size not as expected.')
 
         tg.resize_style = ResizeStyle.PADDING
-        thumbnail = tg.create_thumbnail(self.test_dir / 'resize.png', self.cache_dir / 'resize_fit.jpg')
+        thumbnail = tg.create_thumbnail(self.test_dir / 'resize.png', self.cache_dir / 'resize_padding.jpg')
         self.generated_thumbnails.append(thumbnail)
         with Image.open(thumbnail) as im:
             self.assertEqual(im.getpixel((127, 0)), (0, 0, 255, 255), 'Top color of PADDING resize thumbnail not as expected.')
@@ -235,7 +236,7 @@ class ThumbnailGeneratorTestCase(ut.TestCase):
 
     def test_mask(self):
          tg = ThumbnailGenerator(size=(256, 256), mask=self.test_dir / 'mask.png')
-         thumbnail = tg.create_thumbnail(self.test_dir / 'red_bg.png', self.cache_dir / 'resize_fill.jpg')
+         thumbnail = tg.create_thumbnail(self.test_dir / 'red_bg.png', self.cache_dir / 'test_mask.jpg')
          self.generated_thumbnails.append(thumbnail)
          with Image.open(thumbnail) as im:
              self.assertEqual(im.getpixel((127, 0)), (0, 0, 0, 0), 'Top color of mask test thumbnail not as expected.')
@@ -246,7 +247,7 @@ class ThumbnailGeneratorTestCase(ut.TestCase):
 
     def test_resample(self):
         tg = ThumbnailGenerator(size=(128, 128), resample=Resample.AUTO)
-        thumbnail = tg.create_thumbnail(self.test_dir / 'pixel_art.png', self.cache_dir / 'resize_fill.jpg')
+        thumbnail = tg.create_thumbnail(self.test_dir / 'pixel_art.png', self.cache_dir / 'test_resample.jpg')
         self.generated_thumbnails.append(thumbnail)
         with Image.open(thumbnail) as im:
             self.assertEqual(im.getpixel((0, 0)), (0, 0, 0, 255), 'Color of top left corner of first square in pixel_art thumbnail not as expected.')
@@ -256,25 +257,67 @@ class ThumbnailGeneratorTestCase(ut.TestCase):
 
     def test_upscale(self):
         tg = ThumbnailGenerator(size=(128, 128), upscale=False)
-        thumbnail = tg.create_thumbnail(self.test_dir / 'pixel_art.png', self.cache_dir / 'resize_fill.jpg')
+        thumbnail = tg.create_thumbnail(self.test_dir / 'pixel_art.png', self.cache_dir / 'test_upscale.jpg')
         self.generated_thumbnails.append(thumbnail)
         with Image.open(thumbnail) as im:
             self.assertEqual(im.size, (16, 16), 'No upscale test thumbnail size not as expected.')
 
         tg = ThumbnailGenerator(size=(128, 128), upscale=True)
-        thumbnail = tg.create_thumbnail(self.test_dir / 'pixel_art.png', self.cache_dir / 'resize_fill.jpg')
+        thumbnail = tg.create_thumbnail(self.test_dir / 'pixel_art.png', self.cache_dir / 'test_upscale.jpg')
         self.generated_thumbnails.append(thumbnail)
         with Image.open(thumbnail) as im:
             self.assertEqual(im.size, (128, 128), 'Upscale test thumbnail size not as expected.')
 
-    # def test_color_background(self):
-    #     pass
+    def test_color_background(self):
+        tg = ThumbnailGenerator(size=(256, 256), background=(255, 0, 0))
+        thumbnail = tg.create_thumbnail(self.test_dir / 'blue_fg.png', self.cache_dir / 'test_color_bg.jpg')
+        self.generated_thumbnails.append(thumbnail)
+        with Image.open(thumbnail) as im:
+            self.assertEqual(im.getpixel((0, 0)), (255, 0, 0, 255), 'Color of top left corner of test color background thumbnail not as expected.')
+            self.assertEqual(im.getpixel((0, 255)), (0, 0, 255, 255), 'Color of bottom left corner of test color background thumbnail not as expected.')
+            self.assertEqual(im.getpixel((255, 0)), (0, 0, 255, 255), 'Color of top right corner of test color background thumbnail not as expected.')
+            self.assertEqual(im.getpixel((255, 255)), (255, 0, 0, 255), 'Color of bottom right corner of test color background thumbnail not as expected.')
 
-    # def test_background_foreground(self):
-    #     pass
+    def test_background_foreground(self):
+        tg = ThumbnailGenerator(size=(256, 256), background='red_bg.png', foreground='blue_fg.png')
+        thumbnail = tg.create_thumbnail(self.test_dir / 'green_mg.png', self.cache_dir / 'test_bg_fg.jpg')
+        self.generated_thumbnails.append(thumbnail)
+        with Image.open(thumbnail) as im:
+            self.assertEqual(im.getpixel((0, 0)), (0, 255, 0, 255), 'Color of top left corner of test color background thumbnail not as expected.')
+            self.assertEqual(im.getpixel((0, 255)), (0, 0, 255, 255), 'Color of bottom left corner of test color background thumbnail not as expected.')
+            self.assertEqual(im.getpixel((255, 0)), (0, 0, 255, 255), 'Color of top right corner of test color background thumbnail not as expected.')
+            self.assertEqual(im.getpixel((255, 255)), (255, 0, 0, 255), 'Color of bottom right corner of test color background thumbnail not as expected.')
 
-    # def test_size(self):
-    #     pass
+    def test_size(self):
+        tg = ThumbnailGenerator(size=(64, 64), resize_style=ResizeStyle.FILL)
+        thumbnail = tg.create_thumbnail(self.test_dir / 'red.jpg', self.cache_dir / 'test_size_64x64.jpg')
+        self.generated_thumbnails.append(thumbnail)
+        with Image.open(thumbnail) as im:
+            self.assertEqual(im.size, (64, 64), '64x64 test size thumbnail size not as expected.')
+
+        tg = ThumbnailGenerator(size=(816, 816), resize_style=ResizeStyle.FILL)
+        thumbnail = tg.create_thumbnail(self.test_dir / 'red.jpg', self.cache_dir / 'test_size_816x816.jpg')
+        self.generated_thumbnails.append(thumbnail)
+        with Image.open(thumbnail) as im:
+            self.assertEqual(im.size, (816, 816), '816x816 test size thumbnail size not as expected.')
+
+        tg = ThumbnailGenerator(size=(2048, 2048), resize_style=ResizeStyle.FILL)
+        thumbnail = tg.create_thumbnail(self.test_dir / 'red.jpg', self.cache_dir / 'test_size_2048x2048.jpg')
+        self.generated_thumbnails.append(thumbnail)
+        with Image.open(thumbnail) as im:
+            self.assertEqual(im.size, (2048, 2048), '2048x2048 test size thumbnail size not as expected.')
+
+        tg = ThumbnailGenerator(size=(256, 1024), resize_style=ResizeStyle.FILL)
+        thumbnail = tg.create_thumbnail(self.test_dir / 'red.jpg', self.cache_dir / 'test_size_256x1024.jpg')
+        self.generated_thumbnails.append(thumbnail)
+        with Image.open(thumbnail) as im:
+            self.assertEqual(im.size, (256, 1024), '256x1024 test size thumbnail size not as expected.')
+
+        tg = ThumbnailGenerator(size=(1024, 256), resize_style=ResizeStyle.FILL)
+        thumbnail = tg.create_thumbnail(self.test_dir / 'red.jpg', self.cache_dir / 'test_size_1024x256.jpg')
+        self.generated_thumbnails.append(thumbnail)
+        with Image.open(thumbnail) as im:
+            self.assertEqual(im.size, (1024, 256), '1024x256 test size thumbnail size not as expected.')
 
 def print_suite(suite):
     if hasattr(suite, '__iter__'):

@@ -138,8 +138,11 @@ class ThumbnailGenerator:
             else:
                 resample = Resample.BILINEAR
 
-        if not self.upscale and (image.size[0] > size[0] or image.size[1] > size[1]):
-            size = self._fit_size(image.size, size)
+        if not self.upscale:
+            if image.size[0] < size[0] and image.size[1] < size[1]:
+                size = image.size
+            elif image.size[0] < size[0] or image.size[1] < size[1]:
+                size = self._fit_size(image.size, size)
 
         if resize_style == ResizeStyle.FILL:
             x, y, w, h = self._fill_size(image.size, size)

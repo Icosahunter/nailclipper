@@ -16,4 +16,6 @@ install: build
     python -m pip install --force-reinstall ./dist/*.whl
 
 test test_case="":
+    #!/usr/bin/env sh
+    source venv/bin/activate
     python -m unittest discover -s src
