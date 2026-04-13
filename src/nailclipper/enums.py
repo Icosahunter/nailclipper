@@ -7,6 +7,18 @@ import re
 
 from PIL import Image
 
+class Interval:
+
+    def __call__(self, days=10):
+        # This method returns a method, so you can specify the update interval
+        def interval_check(thumbnail_path, file_uri):
+            thumb_mtime = os.stat(thumbnail_path).st_mtime
+            return (time.time() - thumb_mtime) >= (days*24*60*60)
+        return interval_check
+
+    def __get__(self, obj, objType=None):
+        return self()
+
 class Size:
     """ Thumnail size constants from the Freedesktop thumbnail spec """
     NORMAL  = (128 , 128 )
@@ -19,9 +31,7 @@ freedesktop_sizes = [Size.NORMAL, Size.LARGE, Size.XLARGE, Size.XXLARGE]
 class RefreshPolicy:
     """ Methods for determining if a thumbnail needs to be updated """
 
-    @classmethod
-    def _takes_args(self, val):
-        return val in [self.INTERVAL]
+    INTERVAL = Interval()
 
     @staticmethod
     def FREEDESKTOP(thumbnail_path, file_uri):
@@ -35,15 +45,6 @@ class RefreshPolicy:
         return ((not 'Thumb::MTime' in image.text) # When implementing shared cache, add 'and not thumbnail_manager.is_shared' check somehow
             or ('Thumb::MTime' in image.text and file_mtime != image.text['Thumb::MTime'])
             or ('Thumb::Size' in image.text and file_size != image.text['Thumb::Size']))
-
-    @staticmethod
-    def INTERVAL(days=10):
-        """ Update algorithm based on how old a thumbnail is in days """
-        # This method returns a method, so you can specify the update interval
-        def interval_check(thumbnail_path, file_uri):
-            thumb_mtime = os.stat(thumbnail_path).st_mtime
-            return (time.time() - thumb_mtime) >= (days*24*60*60)
-        return interval_check
 
     @staticmethod
     def AUTO(thumbnail_path, file_uri):
@@ -136,3 +137,9 @@ class Compliance:
     @staticmethod
     def NONE(options):
         return True
+
+class MetadataFormat:
+    """ Format to store thumbnail metadata (such as size and modified date) used to determine if thumbnail is stale. """
+
+    PNG_INFO = object()
+    EXIF = object()

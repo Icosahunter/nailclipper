@@ -32,9 +32,6 @@ class ThumbnailManager:
 
         self._tempdir = tempfile.TemporaryDirectory()
 
-        if RefreshPolicy._takes_args(self.refresh_policy):
-            self.refresh_policy = self.refresh_policy()
-
         if not self.compliance(self):
             raise ComplianceError(f'Options do not meet specified compliance spec "{self.compliance.__name__}"')
 
