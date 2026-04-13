@@ -1,0 +1,9 @@
+[ ] Use abstraction for metadata to allow using other formats than png. Allow choosing metadata method.
+[ ] Use descriptors for optional arg "enums" - almost done, verify things work (add unit test?)
+[ ] Renderer tests
+[ ] Add setting for optionally returning stale thumbnail if one can't be generated
+[ ] Smarter compliance errors
+[ ] Add pypandoc renderer that converts documents to PDF and from there to images
+[ ] Add BLUR_PADDING padding option
+[ ] Add Windows system thumbnail reading
+[ ] Add toggle to make the thumbnail manager readonly
